@@ -1,12 +1,72 @@
-/* global localStorage, b64utohex, sjcl, KJUR, CryptoJS, jQuery, $, location */
+/* global Anvil, localStorage, sjcl, CryptoJS */
+/* eslint-env node */
 
-'use strict'
+/* eslint-disable no-shadow-restricted-names */
+(function (Anvil, undefined) {
+/* eslint-enable no-shadow-restricted-names */
+  'use strict'
 
-window.Anvil = (function () {
-  var Anvil = {}
-
-  var issuer, jwk, hN, hE, params, display
   var session = {}
+
+  // All init functions below must be called!
+  /**
+   * Init function used for http requests.
+   * Function is called with a config object as first parameter with
+   * fields:
+   *    method
+   *    url
+   *    crossDomain
+   *    headers
+   *
+   *  It is expected to return a promise.
+   */
+  function initHttpFunction (fnHttp) {
+    if (fnHttp && typeof fnHttp === 'function') {
+      this.fnHttp = fnHttp
+    } else {
+      throw new Error('initHttpFunction() must be called with a function as argument')
+    }
+  }
+  Anvil.initHttpFunction = initHttpFunction
+
+  function initDeferred (deferred) {
+    if (deferred && typeof deferred === 'object' &&
+      typeof deferred.defer === 'function' &&
+      typeof deferred.deferToPromise === 'function') {
+      this.apiDefer = deferred
+      return
+    }
+    throw new Error("Must pass in object with functions in fields: 'defer', 'deferToPromise'.")
+  }
+  Anvil.initDeferred = initDeferred
+
+  /**
+   *  Init functions for location access.
+   */
+  function initLocationAccess (loc) {
+    if (loc && typeof loc === 'object' &&
+      typeof loc.hash === 'function' &&
+      typeof loc.path === 'function') {
+      this.locAccess = loc
+      return
+    }
+    throw new Error("Must pass in object with functions in fields: 'hash', 'path'.")
+  }
+  Anvil.initLocationAccess = initLocationAccess
+
+  /**
+   *  Init functions for DOM/window access.
+   */
+  function initDOMAccess (da) {
+    if (da && typeof da === 'object' &&
+      typeof da.getWindow === 'function' &&
+      typeof da.getDocument === 'function') {
+      this.domAccess = da
+      return
+    }
+    throw new Error("Must pass in object with functions in fields: 'getWindow', 'getDocument'.")
+  }
+  Anvil.initDOMAccess = initDOMAccess
 
   /**
    * Extend
@@ -29,64 +89,23 @@ window.Anvil = (function () {
   }
 
   /**
-   * Set JWK
-   */
-
-  function setJWK (jwks) {
-    var key = 'anvil.connect.jwk'
-
-    // Recover from localStorage.
-    if (!jwks) {
-      try {
-        jwk = JSON.parse(localStorage[key])
-      } catch (e) {
-        console.log('Cannot deserialized JWK')
-      }
-    }
-
-    // Argument is a naked object.
-    if (!Array.isArray(jwks) && typeof jwks === 'object') {
-      jwk = jwks
-    }
-
-    // Argument is an array of JWK objects.
-    // Find the key for verifying signatures.
-    if (Array.isArray(jwks)) {
-      jwks.forEach(function (obj) {
-        if (obj && obj.use === 'sig') {
-          jwk = obj
-        }
-      })
-    }
-
-    if (jwk) {
-      // provider.jwk = jwk
-      hN = b64utohex(jwk.n)
-      hE = b64utohex(jwk.e)
-      localStorage[key] = JSON.stringify(jwk)
-    }
-  }
-
-  Anvil.setJWK = setJWK
-
-  /**
    * Provider configuration
    */
 
   function configure (options) {
-    this.issuer = issuer = options.issuer
+    var params
+    Anvil.issuer = options.issuer
+    this.validate.configure(options)
 
-    setJWK(options.jwk)
-
-    this.params = params = {}
-    this.params.response_type = options.response_type || 'id_token token'
-    this.params.client_id = options.client_id
-    this.params.redirect_uri = options.redirect_uri
-    this.params.scope = [
+    Anvil.params = params = {}
+    params.response_type = options.response_type || 'id_token token'
+    params.client_id = options.client_id
+    params.redirect_uri = options.redirect_uri
+    params.scope = [
       'openid',
       'profile'
     ].concat(options.scope).join(' ')
-    this.display = display = options.display || 'page'
+    Anvil.display = options.display || 'page'
   }
 
   Anvil.configure = configure
@@ -145,11 +164,14 @@ window.Anvil = (function () {
   function popup (popupWidth, popupHeight) {
     var x0, y0, width, height, popupLeft, popupTop
 
-    // Metrics for the current browser window.
+    var window = this.domAccess.getWindow()
+    var documentElement = this.domAccess.getDocument().documentElement
+
+    // Metrics for the current browser win.
     x0 = window.screenX || window.screenLeft
     y0 = window.screenY || window.screenTop
-    width = window.outerWidth || document.documentElement.clientWidth
-    height = window.outerHeight || document.documentElement.clientHeight
+    width = window.outerWidth || documentElement.clientWidth
+    height = window.outerHeight || documentElement.clientHeight
 
     // Computed popup window metrics.
     popupLeft = Math.round(x0) + (width - popupWidth) / 2
@@ -182,7 +204,7 @@ window.Anvil = (function () {
     var secret = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(random))
 
     now.setTime(exp)
-    document.cookie = 'anvil.connect=' + secret +
+    this.domAccess.getDocument().cookie = 'anvil.connect=' + secret +
       '; expires=' + now.toUTCString()
 
     var encrypted = sjcl.encrypt(secret, JSON.stringify(Anvil.session))
@@ -203,7 +225,7 @@ window.Anvil = (function () {
     try {
       // Use the cookie value to decrypt the session in localStorage
       re = /\banvil\.connect=([^\s;]*)/
-      secret = document.cookie.match(re).pop()
+      secret = this.domAccess.getDocument().cookie.match(re).pop()
       json = sjcl.decrypt(secret, localStorage['anvil.connect'])
       parsed = JSON.parse(json)
     } catch (e) {
@@ -223,7 +245,7 @@ window.Anvil = (function () {
 
   function reset () {
     Anvil.session = session = {}
-    document.cookie = 'anvil.connect=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+    this.domAccess.getDocument().cookie = 'anvil.connect=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
     delete localStorage['anvil.connect']
   }
 
@@ -234,9 +256,9 @@ window.Anvil = (function () {
    */
 
   function uri (endpoint, options) {
-    return issuer + '/' +
+    return Anvil.issuer + '/' +
     (endpoint || 'authorize') + '?' +
-    toFormUrlEncoded(extend({}, params, options, {
+    toFormUrlEncoded(extend({}, Anvil.params, options, {
       nonce: this.nonce()
     }))
   }
@@ -291,7 +313,7 @@ window.Anvil = (function () {
   function request (config) {
     config.headers = this.headers(config.headers)
     config.crossDomain = true
-    return $.ajax(config).promise()
+    return this.fnHttp(config)
   }
 
   Anvil.request = request
@@ -303,7 +325,7 @@ window.Anvil = (function () {
   function userInfo () {
     return this.request({
       method: 'GET',
-      url: issuer + '/userinfo',
+      url: Anvil.issuer + '/userinfo',
       crossDomain: true
     })
   }
@@ -315,7 +337,7 @@ window.Anvil = (function () {
    */
 
   function callback (response) {
-    var deferred = jQuery.Deferred()
+    var deferred = this.apiDefer.defer()
 
     if (response.error) {
       // clear localStorage/cookie/etc
@@ -324,46 +346,28 @@ window.Anvil = (function () {
       Anvil.reset()
       deferred.reject(response)
     } else {
-      var accessJWS = new KJUR.jws.JWS()
-      var idJWS = new KJUR.jws.JWS()
-
       // NEED TO REVIEW THIS CODE FOR SANITY
       // Check the conditions in which some of these verifications
       // are skipped.
 
-      // Decode the access token and verify signature
-      if (response.access_token &&
-        !accessJWS.verifyJWSByNE(response.access_token, hN, hE)) {
-        deferred.reject('Failed to verify access token signature.')
-      }
-
-      // Decode the id token and verify signature
-      if (response.id_token &&
-        !idJWS.verifyJWSByNE(response.id_token, hN, hE)) {
-        deferred.reject('Failed to verify id token signature.')
-      }
-
-      // Parse the access token payload
       try {
-        response.access_claims = JSON.parse(accessJWS.parsedJWS.payloadS)
+        response.access_claims = Anvil.validate.validateAndParseToken(response.access_token)
       } catch (e) {
-        deferred.reject("Can't parse access token payload.")
+        deferred.reject('Failed to verify or parse access token')
       }
-
-      // Parse the id token payload
       try {
-        response.id_claims = JSON.parse(idJWS.parsedJWS.payloadS)
+        response.id_claims = Anvil.validate.validateAndParseToken(response.id_token)
       } catch (e) {
-        deferred.reject("Can't parse id token payload.")
+        deferred.reject('Failed to verify or parse id token')
       }
 
       // Validate the nonce
-      if (response.id_claims && !nonce(response.id_claims.nonce)) {
+      if (response.id_claims && !Anvil.nonce(response.id_claims.nonce)) {
         deferred.reject('Invalid nonce.')
       }
 
       // Verify at_hash
-      if (['id_token token'].indexOf(params.response_type) !== -1) {
+      if (['id_token token'].indexOf(Anvil.params.response_type) !== -1) {
         var atHash = CryptoJS
           .SHA256(response.access_token)
           .toString(CryptoJS.enc.Hex)
@@ -373,7 +377,7 @@ window.Anvil = (function () {
         }
       }
 
-      Anvil.session = session = response
+      Anvil.session = response
       Anvil.sessionState = response.session_state
       // console.log('CALLBACK SESSION STATE', Anvil.sessionState)
 
@@ -381,7 +385,7 @@ window.Anvil = (function () {
         function userInfoSuccess (userInfo) {
           Anvil.session.userInfo = userInfo
           Anvil.serialize()
-          deferred.resolve(session)
+          deferred.resolve(Anvil.session)
         },
 
         function userInfoFailure () {
@@ -390,7 +394,7 @@ window.Anvil = (function () {
       )
     }
 
-    return deferred.promise()
+    return this.apiDefer.deferToPromise(deferred)
   }
 
   Anvil.callback = callback
@@ -401,21 +405,23 @@ window.Anvil = (function () {
 
   function authorize () {
     // handle the auth response
-    if (location.hash) {
-      return Anvil.callback(parseFormUrlEncoded(location.hash.substring(1)))
+    if (this.locAccess.hash()) {
+      return Anvil.callback(parseFormUrlEncoded(this.locAccess.hash()))
 
     // initiate the auth flow
     } else {
-      Anvil.destination(location.pathname)
+      Anvil.destination(this.locAccess.path())
 
+      var window = this.domAccess.getWindow()
       // open the signin page in a popup window
-      if (display === 'popup') {
-        var deferred = jQuery.Deferred()
+      if (Anvil.display === 'popup') {
+        var deferred = this.apiDefer.defer()
 
         var listener = function listener (event) {
           if (event.data !== '__ready__') {
             var fragment = getUrlFragment(event.data)
-            Anvil.callback(parseFormUrlEncoded(fragment)).then(
+            Anvil.callback(parseFormUrlEncoded(fragment))
+            .then(
               function (result) { deferred.resolve(result) },
               function (fault) { deferred.reject(fault) }
             )
@@ -424,9 +430,8 @@ window.Anvil = (function () {
         }
 
         window.addEventListener('message', listener, false)
-        window.open(this.uri(), 'anvil', popup(700, 500))
-
-        return deferred.promise()
+        window.open(this.uri(), 'anvil', Anvil.popup(700, 500))
+        return this.apiDefer.deferToPromise(deferred)
 
       // navigate the current window to the provider
       } else {
@@ -442,23 +447,24 @@ window.Anvil = (function () {
    */
 
   function signout (path) {
+    var win = this.domAccess.getWindow()
     // parse the window location
-    var url = document.createElement('a')
-    url.href = window.location.href
+    var url = this.domAccess.getDocument().createElement('a')
+    url.href = win.location.href
     url.pathname = path || '/'
 
     // set the destination
     Anvil.destination(path || false)
 
     // url to sign out of the auth server
-    var location = issuer + '/signout?post_logout_redirect_uri=' +
+    var signoutLocation = Anvil.issuer + '/signout?post_logout_redirect_uri=' +
       url.href + '&id_token_hint=' + Anvil.session.id_token
 
     // reset the session
     Anvil.reset()
 
     // "redirect"
-    window.location = location
+    win.location = signoutLocation
   }
 
   Anvil.signout = signout
@@ -521,7 +527,6 @@ window.Anvil = (function () {
   }
 
   Anvil.updateSession = updateSession
-  window.addEventListener('storage', updateSession, true)
 
   /**
    * Is Authenticated
@@ -534,14 +539,14 @@ window.Anvil = (function () {
   Anvil.isAuthenticated = isAuthenticated
 
   /**
-   * Signing Key
+   * Signing Key - only used if validate has setJWK method!
    */
 
   function getKeys () {
-    var deferred = jQuery.Deferred()
+    var deferred = this.apiDefer.defer()
 
     function success (response) {
-      setJWK(response && response.keys)
+      Anvil.validate.setJWK(response && response.keys)
       deferred.resolve(response)
     }
 
@@ -549,26 +554,14 @@ window.Anvil = (function () {
       deferred.reject(fault)
     }
 
-    $.ajax({
+    request({
       method: 'GET',
-      url: issuer + '/jwks',
+      url: Anvil.issuer + '/jwks',
       crossDomain: true
     }).then(success, failure)
 
-    return deferred.promise()
+    return this.apiDefer.deferToPromise(deferred)
   }
 
   Anvil.getKeys = getKeys
-
-  /**
-   * Reinstate an existing session
-   */
-
-  Anvil.deserialize()
-
-  /**
-   * Export
-   */
-
-  return Anvil
-})()
+})(Anvil)

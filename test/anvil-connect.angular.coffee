@@ -5,7 +5,7 @@ describe 'Anvil Connect', ->
 
 
 
-  {Anvil,AnvilProvider,uri,nonce,$httpBackend,promise,jwk} = {}
+  {Anvil,AnvilProvider,uri,nonce,$httpBackend,promise} = {}
 
 
 
@@ -16,12 +16,6 @@ describe 'Anvil Connect', ->
     redirect_uri: 'https://my.app.com'
     scope:        ['other']
     display:      'popup'
-    jwk:
-      "kty":"RSA",
-      "use":"sig",
-      "alg":"RS256",
-      "n":"AJ4bmyK/fLoEMPuiR6uHOWlhjJRQFPunVxWHsG8uwPneJmPxCGPbboyVlCGtD1xsfHtygIu7zhfNbb1AiHW5pc3bi1k8udM3CHQUTuneudNtMkIODGm/pTV3nQ1TH1tr9ebquT360DTEhkmjv/5LZwsnOA0HAf/3GG9fu8gl55mhpKnyhWpkbrHryuh8cx8hUzLwi5Rr5gA1IrhQP9SFX2y68suSS0wp7HoQTIie6EXy/G2OJi7kqJS0UjkXK7ZPqf56OGBm+TlYBmwyXdWZ3bBglnlPjBb67exSMiXmi+yeeFa52tWLZlOqNf6CWb2XrNf6PWCxt0NZ7V3HPOrjOmM=",
-      "e":"AQAB"
 
 
   beforeEach module 'anvil'
@@ -34,88 +28,6 @@ describe 'Anvil Connect', ->
   beforeEach inject ($injector) ->
     $httpBackend = $injector.get '$httpBackend'
     Anvil = $injector.get 'Anvil'
-
-
-
-
-  describe 'setJWK', ->
-
-    describe 'with empty argument', ->
-
-      beforeEach ->
-        jwk =
-          kid: 'empty'
-          kty: 'TEST'
-          use: 'sig'
-          alg: 'WTF'
-          n: 'h3xh3xh3x'
-          e: 'h3x'
-        localStorage['anvil.connect.jwk'] = JSON.stringify jwk
-        AnvilProvider.setJWK()
-
-      it 'should serialize the JWK in localStorage', ->
-        expect(localStorage['anvil.connect.jwk']).toEqual JSON.stringify(jwk)
-
-      it 'should set the jwk on the provider', ->
-        expect(AnvilProvider.jwk).toEqual jwk
-
-      it 'should set the modulus on the provider', ->
-        expect(AnvilProvider.hN).toBe b64tohex(jwk.n)
-
-      it 'should set the exponent on the provider', ->
-        expect(AnvilProvider.hE).toBe b64tohex(jwk.e)
-
-
-    describe 'with object argument', ->
-
-      beforeEach ->
-        jwk =
-          kid: 'object'
-          kty: 'TEST'
-          use: 'sig'
-          alg: 'WTF'
-          n: 'h3xh3xh3x'
-          e: 'h3x'
-        AnvilProvider.setJWK(jwk)
-
-      it 'should serialize the JWK in localStorage', ->
-        expect(localStorage['anvil.connect.jwk']).toBe JSON.stringify(jwk)
-
-      it 'should set the jwk on the provider', ->
-        expect(AnvilProvider.jwk).toBe jwk
-
-      it 'should set the modulus on the provider', ->
-        expect(AnvilProvider.hN).toBe b64tohex(jwk.n)
-
-      it 'should set the exponent on the provider', ->
-        expect(AnvilProvider.hE).toBe b64tohex(jwk.e)
-
-
-    describe 'with array argument', ->
-
-      beforeEach ->
-        jwk =
-          kid: 'object'
-          kty: 'TEST'
-          use: 'sig'
-          alg: 'WTF'
-          n: 'h3xh3xh3x'
-          e: 'h3x'
-        AnvilProvider.setJWK([jwk])
-
-      it 'should serialize the JWK in localStorage', ->
-        expect(localStorage['anvil.connect.jwk']).toBe JSON.stringify(jwk)
-
-      it 'should set the jwk on the provider', ->
-        expect(AnvilProvider.jwk).toBe jwk
-
-      it 'should set the modulus on the provider', ->
-        expect(AnvilProvider.hN).toBe b64tohex(jwk.n)
-
-      it 'should set the exponent on the provider', ->
-        expect(AnvilProvider.hE).toBe b64tohex(jwk.e)
-
-
 
 
   describe 'configure provider', ->
@@ -177,6 +89,7 @@ describe 'Anvil Connect', ->
       popup = Anvil.popup(700, 500)
       expect(popup).toContain 'width=700,'
       expect(popup).toContain 'height=500,'
+
       expect(popup).toContain 'dialog=yes,'
       expect(popup).toContain 'dependent=yes,'
       expect(popup).toContain 'scrollbars=yes,'
@@ -417,5 +330,3 @@ describe 'Anvil Connect', ->
 
 
   describe 'signout', ->
-
-
