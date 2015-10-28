@@ -1,5 +1,4 @@
-/* global Anvil, localStorage, sjcl, CryptoJS */
-/* eslint-env node */
+/* global Anvil, localStorage, sjcl */
 
 /* eslint-disable no-shadow-restricted-names */
 (function (Anvil, undefined) {
@@ -368,9 +367,8 @@
 
       // Verify at_hash
       if (['id_token token'].indexOf(Anvil.params.response_type) !== -1) {
-        var atHash = CryptoJS
-          .SHA256(response.access_token)
-          .toString(CryptoJS.enc.Hex)
+        var sha = sjcl.hash.sha256.hash(response.access_token)
+        var atHash = sjcl.codec.hex.fromBits(sha)
         atHash = atHash.slice(0, atHash.length / 2)
         if (response.id_claims && atHash !== response.id_claims.at_hash) {
           deferred.reject('Invalid access token hash in id token payload')
