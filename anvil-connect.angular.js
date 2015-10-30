@@ -8,8 +8,13 @@ window.Anvil = (function () {
   // initialization happens below.
 
   function init ($q, $http, $location, $document, $window) {
-    Anvil.initHttpFunction(function (config) {
-      return $http(config) // ? TODO: do we need .promise() here
+    Anvil.initHttpAccess({
+      request: function (config) {
+        return $http(config) // ? TODO: do we need .promise() here
+      },
+      getData: function (response) {
+        return response.data
+      }
     })
 
     Anvil.initDeferred({

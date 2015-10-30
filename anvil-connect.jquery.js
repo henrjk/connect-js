@@ -6,8 +6,13 @@ window.Anvil = (function () {
   var Anvil = {}
 
   function init () {
-    Anvil.initHttpFunction(function (config) {
-      return $.ajax(config).promise()
+    Anvil.initHttpAccess({
+      request: function (config) {
+        return $.ajax(config).promise()
+      },
+      getData: function (response) {
+        return response
+      }
     })
 
     Anvil.initDeferred({

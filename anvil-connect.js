@@ -9,6 +9,7 @@
 
   // All init functions below must be called!
   /**
+   * TODO: update comment.
    * Init function used for http requests.
    * Function is called with a config object as first parameter with
    * fields:
@@ -19,14 +20,17 @@
    *
    *  It is expected to return a promise.
    */
-  function initHttpFunction (fnHttp) {
-    if (fnHttp && typeof fnHttp === 'function') {
-      this.fnHttp = fnHttp
+  function initHttpAccess (http) {
+    if (http && typeof http === 'object' &&
+      typeof http.request === 'function' &&
+      typeof http.getData === 'function') {
+      this.apiHttp = http
     } else {
-      throw new Error('initHttpFunction() must be called with a function as argument')
+      throw new Error("Must pass in object with functions in fields: 'request', 'getData'.")
     }
   }
-  Anvil.initHttpFunction = initHttpFunction
+
+  Anvil.initHttpAccess = initHttpAccess
 
   function initDeferred (deferred) {
     if (deferred && typeof deferred === 'object' &&
@@ -312,7 +316,7 @@
   function request (config) {
     config.headers = this.headers(config.headers)
     config.crossDomain = true
-    return this.fnHttp(config)
+    return this.apiHttp.request(config)
   }
 
   Anvil.request = request
@@ -379,9 +383,10 @@
       Anvil.sessionState = response.session_state
       // console.log('CALLBACK SESSION STATE', Anvil.sessionState)
 
+      var apiHttp = this.apiHttp
       Anvil.userInfo().then(
         function userInfoSuccess (userInfo) {
-          Anvil.session.userInfo = userInfo
+          Anvil.session.userInfo = apiHttp.getData(userInfo)
           Anvil.serialize()
           deferred.resolve(Anvil.session)
         },
@@ -542,9 +547,11 @@
 
   function getKeys () {
     var deferred = this.apiDefer.defer()
+    var apiHttp = this.apiHttp
 
     function success (response) {
-      Anvil.validate.setJWK(response && response.keys)
+      Anvil.validate.setJWK(response && apiHttp.getData(response) &&
+        apiHttp.getData(response).keys)
       deferred.resolve(response)
     }
 
@@ -552,7 +559,7 @@
       deferred.reject(fault)
     }
 
-    request({
+    this.request({
       method: 'GET',
       url: Anvil.issuer + '/jwks',
       crossDomain: true
