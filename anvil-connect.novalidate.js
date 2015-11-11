@@ -35,7 +35,20 @@
 
   Validate.configure = configure
 
-  /**
+  /*
+   * Prepare validate
+   *
+   * Nothing to do really but callers expect a promise return value
+   */
+  function prepareValidate () {
+    var deferred = Anvil.apiDefer.defer()
+    deferred.resolve()
+    return Anvil.apiDefer.deferToPromise(deferred)
+  }
+
+  Validate.prepareValidate = prepareValidate
+
+/**
    * Validate tokens
    */
 

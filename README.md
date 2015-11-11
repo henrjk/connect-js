@@ -25,6 +25,12 @@ lorem ipsum dolor amit
 // ...
 ```
 -->
+
+#### Anvil.init()
+
+#### Anvil.prepareAuthorization
+
+
 #### Anvil.toFormUrlEncoded(obj)
 #### Anvil.parseFormUrlEncoded(str)
 #### Anvil.getUrlFragment(url)
@@ -46,7 +52,6 @@ lorem ipsum dolor amit
 #### Anvil.checkSession(id)
 #### Anvil.updateSession(event)
 #### Anvil.isAuthenticated()
-#### Anvil.getKeys()
 
 
 ### AngularJS Usage
@@ -142,4 +147,3 @@ angular.module('App', ['...', 'anvil'])
 
   })
 ```
-

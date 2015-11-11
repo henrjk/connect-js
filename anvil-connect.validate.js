@@ -1,7 +1,7 @@
 /* global Anvil, localStorage, b64utohex, KJUR  */
 
 /* eslint-disable no-shadow-restricted-names */
-(function (exports, undefined) {
+(function (Anvil, undefined) {
 /* eslint-enable no-shadow-restricted-names */
 
   'use strict'
@@ -47,6 +47,7 @@
       hE = b64utohex(jwk.e)
       localStorage[key] = JSON.stringify(jwk)
     }
+    return jwk
   }
 
   Validate.setJWK = setJWK
@@ -60,6 +61,54 @@
   }
 
   Validate.configure = configure
+
+  /**
+   * Signing Key - only used if validate has setJWK method!
+   */
+
+  function getKeys () {
+    var deferred = Anvil.apiDefer.defer()
+    var apiHttp = Anvil.apiHttp
+
+    function success (response) {
+      Anvil.validate.setJWK(response && apiHttp.getData(response) &&
+        apiHttp.getData(response).keys)
+      deferred.resolve(response)
+    }
+
+    function failure (fault) {
+      deferred.reject(fault)
+    }
+
+    Anvil.request({
+      method: 'GET',
+      url: Anvil.issuer + '/jwks',
+      crossDomain: true
+    }).then(success, failure)
+
+    return Anvil.apiDefer.deferToPromise(deferred)
+  }
+
+  Validate.getKeys = getKeys
+
+  /*
+   * Prepare validate
+   *
+   * May retrieve keys if needed. Returns a promise.
+   */
+  function prepareValidate () {
+    var jwk = setJWK() // reads from local storage
+    if (jwk) {
+      // this is not doing anything
+      var deferred = Anvil.apiDefer.defer()
+      deferred.resolve()
+      return Anvil.apiDefer.deferToPromise(deferred)
+    } else {
+      return getKeys()
+    }
+  }
+
+  Validate.prepareValidate = prepareValidate
 
   /**
    * Validate tokens
@@ -89,7 +138,7 @@
    * Export
    */
 
-  exports.validate = Validate
+  Anvil.validate = Validate
 
-  return exports.validate
+  return Anvil.validate
 })(Anvil)

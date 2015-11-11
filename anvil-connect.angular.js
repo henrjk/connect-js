@@ -44,12 +44,9 @@ window.Anvil = (function () {
       }
     })
 
-    if (!Anvil.validate.setJWK) {
-      delete Anvil.getKeys
-    }
-
     // should this be called here or in .run block?
-    // Anvil.getKeys().then(function () {
+    // This would now change to
+    // Anvil.validate.prepareValidate().then(function () {
     //  console.log(provider)
     // })
 

@@ -24,7 +24,7 @@
     if (http && typeof http === 'object' &&
       typeof http.request === 'function' &&
       typeof http.getData === 'function') {
-      this.apiHttp = http
+      Anvil.apiHttp = this.apiHttp = http
     } else {
       throw new Error("Must pass in object with functions in fields: 'request', 'getData'.")
     }
@@ -36,7 +36,7 @@
     if (deferred && typeof deferred === 'object' &&
       typeof deferred.defer === 'function' &&
       typeof deferred.deferToPromise === 'function') {
-      this.apiDefer = deferred
+      Anvil.apiDefer = this.apiDefer = deferred
       return
     }
     throw new Error("Must pass in object with functions in fields: 'defer', 'deferToPromise'.")
@@ -112,6 +112,18 @@
   }
 
   Anvil.configure = configure
+
+  /**
+   * Do initializations which require network calls.
+   *
+   * returns a promise.
+   */
+
+  function prepareAuthorization () {
+    return Anvil.validate.prepareValidate()
+  }
+
+  Anvil.prepareAuthorization = prepareAuthorization
 
   /**
    * Form Urlencode an object
@@ -540,33 +552,4 @@
   }
 
   Anvil.isAuthenticated = isAuthenticated
-
-  /**
-   * Signing Key - only used if validate has setJWK method!
-   */
-
-  function getKeys () {
-    var deferred = this.apiDefer.defer()
-    var apiHttp = this.apiHttp
-
-    function success (response) {
-      Anvil.validate.setJWK(response && apiHttp.getData(response) &&
-        apiHttp.getData(response).keys)
-      deferred.resolve(response)
-    }
-
-    function failure (fault) {
-      deferred.reject(fault)
-    }
-
-    this.request({
-      method: 'GET',
-      url: Anvil.issuer + '/jwks',
-      crossDomain: true
-    }).then(success, failure)
-
-    return this.apiDefer.deferToPromise(deferred)
-  }
-
-  Anvil.getKeys = getKeys
 })(Anvil)

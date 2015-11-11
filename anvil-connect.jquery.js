@@ -42,10 +42,6 @@ window.Anvil = (function () {
       }
     })
 
-    if (!Anvil.validate.setJWK) {
-      delete Anvil.getKeys
-    }
-
     window.addEventListener('storage', Anvil.updateSession, true)
 
     /**
