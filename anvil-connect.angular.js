@@ -45,9 +45,8 @@ window.Anvil = (function () {
     })
 
     // should this be called here or in .run block?
-    // This would now change to
     // Anvil.validate.prepareValidate().then(function () {
-    //  console.log(provider)
+    //  log(provider)
     // })
 
     $window.addEventListener('storage', Anvil.updateSession, true)

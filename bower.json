@@ -36,6 +36,7 @@
     "crypto-js": "http://crypto-js.googlecode.com/files/CryptoJS%20v3.1.2.zip",
     "q": "1.0.1",
     "q-xhr": "~1.0.0",
-    "tiny-emitter": "~1.0.1"
+    "tiny-emitter": "~1.0.1",
+    "bows": "~1.4.8"
   }
 }

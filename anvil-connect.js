@@ -1,9 +1,11 @@
-/* global Anvil, localStorage, sjcl, TinyEmitter */
+/* global Anvil, localStorage, bows, sjcl, TinyEmitter */
 
 /* eslint-disable no-shadow-restricted-names */
 (function (Anvil, undefined) {
 /* eslint-enable no-shadow-restricted-names */
   'use strict'
+
+  var log = bows('Anvil')
 
   var session = {}
 
@@ -132,6 +134,13 @@
 
   function prepareAuthorization () {
     return Anvil.validate.prepareValidate()
+      .then( function (val) {
+        log.debug('Anvil.prepareAuthorization() succeeded.')
+        return val
+      }, function (err) {
+        log.warn('Anvil.prepareAuthorization() failed:', err.stack)
+        throw err
+      })
   }
 
   Anvil.prepareAuthorization = prepareAuthorization
@@ -236,7 +245,7 @@
     var encrypted = sjcl.encrypt(secret, JSON.stringify(Anvil.session))
     localStorage['anvil.connect'] = encrypted
     localStorage['anvil.connect.session.state'] = Anvil.sessionState
-  // console.log('SERIALIZED', encrypted)
+    log.debug('SERIALIZED', encrypted)
   }
 
   Anvil.serialize = serialize
@@ -254,8 +263,10 @@
       secret = this.domAccess.getDocument().cookie.match(re).pop()
       json = sjcl.decrypt(secret, localStorage['anvil.connect'])
       parsed = JSON.parse(json)
+      log.debug('Deserialized session data', parsed.userInfo)
     } catch (e) {
-      // console.log('Cannot deserialize session data')
+      // this is not unexpected.
+      log.debug('Cannot deserialize session data', e)
     }
 
     Anvil.session = session = parsed || {}
@@ -297,6 +308,10 @@
 
   function nonce (nonce) {
     if (nonce) {
+      var lnonce = localStorage['nonce']
+      if (!lnonce) {
+        return false;
+      }
       return (Anvil.sha256url(localStorage['nonce']) === nonce)
     } else {
       localStorage['nonce'] = Math.random().toString(36).substr(2, 10)
@@ -340,6 +355,13 @@
     config.headers = this.headers(config.headers)
     config.crossDomain = true
     return this.apiHttp.request(config)
+      .then( function (val) {
+        log.debug('Anvil.request succeeded.', config)
+        return val
+      }, function (err) {
+        log.warn('Anvil.request failed:', config, err.stack)
+        throw err
+      })
   }
 
   Anvil.request = request
@@ -404,7 +426,7 @@
 
       Anvil.session = response
       Anvil.sessionState = response.session_state
-      // console.log('CALLBACK SESSION STATE', Anvil.sessionState)
+      log.debug('CALLBACK SESSION STATE', Anvil.sessionState)
 
       var apiHttp = this.apiHttp
       Anvil.userInfo().then(

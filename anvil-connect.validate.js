@@ -1,10 +1,12 @@
-/* global Anvil, localStorage, b64utohex, KJUR  */
+/* global Anvil, localStorage, bows, b64utohex, KJUR  */
 
 /* eslint-disable no-shadow-restricted-names */
 (function (Anvil, undefined) {
 /* eslint-enable no-shadow-restricted-names */
 
   'use strict'
+
+  var log = bows('Anvil.validate')
 
   var Validate = {}
 
@@ -22,7 +24,7 @@
       try {
         jwk = JSON.parse(localStorage[key])
       } catch (e) {
-        console.log('Cannot deserialized JWK')
+        log('Cannot deserialized JWK', e)
       }
     }
 
