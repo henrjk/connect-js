@@ -310,7 +310,7 @@
     if (nonce) {
       var lnonce = localStorage['nonce']
       if (!lnonce) {
-        return false;
+        return false
       }
       return (Anvil.sha256url(localStorage['nonce']) === nonce)
     } else {
@@ -355,7 +355,7 @@
     config.headers = this.headers(config.headers)
     config.crossDomain = true
     return this.apiHttp.request(config)
-      .then( function (val) {
+      .then(function (val) {
         log.debug('Anvil.request succeeded.', config)
         return val
       }, function (err) {
