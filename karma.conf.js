@@ -16,6 +16,7 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'bower_components/tiny-emitter/dist/tinyemitter.js',
       'bower_components/sjcl/sjcl.js',
       'bower_components/crypto-js/components/core.js',
       'bower_components/crypto-js/components/sha1.js',

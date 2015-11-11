@@ -1,4 +1,4 @@
-/* global Anvil, localStorage, sjcl */
+/* global Anvil, localStorage, sjcl, TinyEmitter */
 
 /* eslint-disable no-shadow-restricted-names */
 (function (Anvil, undefined) {
@@ -90,6 +90,17 @@
 
     return target
   }
+
+  /**
+   * Support events, e.g. 'authenticated'
+   *
+   * The 'authenticated' event is emitted in response to a
+   * local storage 'anvil.connect' event when the user is authenticated.
+   *
+   * This can be leveraged to react to an authentiation performed in
+   * other windows or tabs.
+   */
+  extend(Anvil, TinyEmitter.prototype)
 
   /**
    * Provider configuration
@@ -428,9 +439,19 @@
       Anvil.destination(this.locAccess.path())
 
       var window = this.domAccess.getWindow()
-      // open the signin page in a popup window
       if (Anvil.display === 'popup') {
+        // open the signin page in a popup window
+        // In a typical case the popup window will be redirected
+        // to the configured callback page.
+
+        // If this callback page is rendered in the popup it
+        // should send the message:
+        // `opener.postMessage(location.href, opener.location.origin)`.
+        // This will then cause a login in this window (not the popup) as
+        // implemented in the 'message' listener below.
+
         var deferred = this.apiDefer.defer()
+        var popup
 
         var listener = function listener (event) {
           if (event.data !== '__ready__') {
@@ -441,11 +462,29 @@
               function (fault) { deferred.reject(fault) }
             )
             window.removeEventListener('message', listener, false)
+            if (popup) {
+              popup.close()
+            }
           }
         }
 
         window.addEventListener('message', listener, false)
-        window.open(this.uri(), 'anvil', Anvil.popup(700, 500))
+
+        // Some authentication methods will NOT cause a redirect ever!
+        //
+        // The passwordless login method sends the user a link in an email.
+        // When the user presses this link then a new window openes with the
+        // configured callback.
+        // In this case the callback page has no opener and is expected to
+        // call Anvil.callback itself.
+        // The listener below will react to the case where there is a
+        // successful login and then close the popup.
+        Anvil.once('authenticated', function () {
+          if (popup) {
+            popup.close()
+          }
+        })
+        popup = window.open(this.uri(), 'anvil', Anvil.popup(700, 500))
         return this.apiDefer.deferToPromise(deferred)
 
       // navigate the current window to the provider
@@ -538,6 +577,7 @@
   function updateSession (event) {
     if (event.key === 'anvil.connect') {
       Anvil.deserialize()
+      Anvil.emit('authenticated', Anvil.session)
     }
   }
 
