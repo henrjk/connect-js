@@ -134,8 +134,8 @@
 
   function prepareAuthorization () {
     return Anvil.validate.prepareValidate()
-      .then( function (val) {
-        log.debug('Anvil.prepareAuthorization() succeeded.')
+      .then(function (val) {
+        log.debug('Anvil.prepareAuthorization() succeeded.', val)
         return val
       }, function (err) {
         log.warn('Anvil.prepareAuthorization() failed:', err.stack)
@@ -266,7 +266,7 @@
       log.debug('Deserialized session data', parsed.userInfo)
     } catch (e) {
       // this is not unexpected.
-      log.debug('Cannot deserialize session data', e)
+      log.debug('Cannot deserialize session data', e, e.stack)
     }
 
     Anvil.session = session = parsed || {}
