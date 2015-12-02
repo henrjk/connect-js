@@ -1,67 +1,45 @@
-/* global angular, Anvil */
+/* eslint-env es6 */
 
-'use strict'
+import Anvil from './anvil-connect'
+import angular from 'angular'
 
-window.Anvil = (function () {
-  var Anvil = {}
-  // file anvil-connect.js is loaded after this file.
-  // initialization happens below.
-
-  function init ($q, $http, $location, $document, $window) {
-    Anvil.initHttpAccess({
+function init (providerOptions, $http, $q, $location, $window, $document) {
+  Anvil.init(providerOptions, {
+    http: {
       request: function (config) {
-        return $http(config) // ? TODO: do we need .promise() here
+        return $http(config)
       },
       getData: function (response) {
         return response.data
       }
-    })
-
-    Anvil.initDeferred({
+    },
+    deferred: {
       defer: function () {
         return $q.defer()
       },
       deferToPromise: function (deferred) {
         return deferred.promise
       }
-    })
-
-    Anvil.initLocationAccess({
+    },
+    location: {
       hash: function () {
         return $location.hash()
       },
       path: function () {
         return $location.path()
       }
-    })
-
-    Anvil.initDOMAccess({
+    },
+    dom: {
       getWindow: function () {
         return $window
       },
       getDocument: function () {
         return $document[0]
       }
-    })
-
-    // should this be called here or in .run block?
-    // Anvil.validate.prepareValidate().then(function () {
-    //  log(provider)
-    // })
-
-    $window.addEventListener('storage', Anvil.updateSession, true)
-
-    /**
-     * Reinstate an existing session
-     */
-
-    Anvil.deserialize()
-  }
-
-  Anvil.init = init
-
+    }
+  })
   return Anvil
-})()
+}
 
 angular.module('anvil', [])
 
@@ -116,7 +94,7 @@ angular.module('anvil', [])
       '$location',
       '$document',
       '$window', function ($q, $http, $rootScope, $location, $document, $window) {
-        Anvil.init($q, $http, $location, $document, $window)
+        init(null, $http, $q, $location, $window, $document)
         return Anvil
       }]
 

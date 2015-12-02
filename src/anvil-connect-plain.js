@@ -1,57 +1,45 @@
-/* global Q, location */
+/* eslint-env es6 */
+/* global location */
 
 'use strict'
 
-window.Anvil = (function () {
-  var Anvil = {}
+import Q from 'q'
+import Anvil from './anvil-connect'
 
-  function init () {
-    Anvil.initHttpAccess({
+export default function init (providerOptions) {
+  Anvil.init(providerOptions, {
+    http: {
       request: function (config) {
         return Q.xhr(config)
       },
       getData: function (response) {
         return response.data
       }
-    })
-
-    Anvil.initDeferred({
+    },
+    deferred: {
       defer: function () {
         return Q.defer()
       },
       deferToPromise: function (deferred) {
         return deferred.promise
       }
-    })
-
-    Anvil.initLocationAccess({
+    },
+    location: {
       hash: function () {
         return location.hash.substring(1)
       },
       path: function () {
         return location.pathname
       }
-    })
-
-    Anvil.initDOMAccess({
+    },
+    dom: {
       getWindow: function () {
         return window
       },
       getDocument: function () {
         return document
       }
-    })
-
-    window.addEventListener('storage', Anvil.updateSession, true)
-
-    /**
-     * Reinstate an existing session
-     */
-
-    Anvil.deserialize()
-  }
-
-  Anvil.init = init
-
+    }
+  })
   return Anvil
-})()
+}

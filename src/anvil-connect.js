@@ -1,8 +1,17 @@
-/* global Anvil, localStorage, bows, sjcl, TinyEmitter */
+/* eslint-env es6 */
+/* global localStorage */
+
+var Anvil = {}
+
+import bows from 'bows'
+import TinyEmitter from 'tiny-emitter'
+import jwtvalidator from 'anvil-connect-jwt-validator'
+import sjcl from 'sjcl'
 
 /* eslint-disable no-shadow-restricted-names */
-(function (Anvil, undefined) {
+// (function (Anvil, undefined) {
 /* eslint-enable no-shadow-restricted-names */
+/* eslint-disable indent */
   'use strict'
 
   var log = bows('Anvil')
@@ -107,11 +116,10 @@
   /**
    * Provider configuration
    */
-
   function configure (options) {
     var params
     Anvil.issuer = options.issuer
-    this.validate.configure(options)
+    jwtvalidator.configure(Anvil, options)
 
     Anvil.params = params = {}
     params.response_type = options.response_type || 'id_token token'
@@ -126,6 +134,30 @@
 
   Anvil.configure = configure
 
+  function init (providerOptions, apis) {
+    if (providerOptions) {
+      Anvil.configure(providerOptions)
+    }
+
+    Anvil.initHttpAccess(apis.http)
+
+    Anvil.initDeferred(apis.deferred)
+
+    Anvil.initLocationAccess(apis.location)
+
+    Anvil.initDOMAccess(apis.dom)
+
+    apis.dom.getWindow().addEventListener('storage', Anvil.updateSession, true)
+
+    /**
+     * Reinstate an existing session
+     */
+
+    Anvil.deserialize()
+  }
+
+  Anvil.init = init
+
   /**
    * Do initializations which require network calls.
    *
@@ -133,7 +165,7 @@
    */
 
   function prepareAuthorization () {
-    return Anvil.validate.prepareValidate()
+    return jwtvalidator.prepareValidate()
       .then(function (val) {
         log.debug('Anvil.prepareAuthorization() succeeded.', val)
         return val
@@ -399,12 +431,12 @@
       // are skipped.
 
       try {
-        response.access_claims = Anvil.validate.validateAndParseToken(response.access_token)
+        response.access_claims = jwtvalidator.validateAndParseToken(response.access_token)
       } catch (e) {
         deferred.reject('Failed to verify or parse access token')
       }
       try {
-        response.id_claims = Anvil.validate.validateAndParseToken(response.id_token)
+        response.id_claims = jwtvalidator.validateAndParseToken(response.id_token)
       } catch (e) {
         deferred.reject('Failed to verify or parse id token')
       }
@@ -614,4 +646,7 @@
   }
 
   Anvil.isAuthenticated = isAuthenticated
-})(Anvil)
+
+  export default Anvil
+
+// })(Anvil)

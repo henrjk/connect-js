@@ -1,57 +1,43 @@
-/* global jQuery, $, location */
+/* eslint-env es6 */
+/* global location */
 
-'use strict'
+import Anvil from './anvil-connect'
+import jQuery from 'jquery'
 
-window.Anvil = (function () {
-  var Anvil = {}
-
-  function init () {
-    Anvil.initHttpAccess({
+export default function init (providerOptions) {
+  Anvil.init(providerOptions, {
+    http: {
       request: function (config) {
-        return $.ajax(config).promise()
+        return jQuery.ajax(config).promise()
       },
       getData: function (response) {
         return response
       }
-    })
-
-    Anvil.initDeferred({
+    },
+    deferred: {
       defer: function () {
         return jQuery.Deferred()
       },
       deferToPromise: function (deferred) {
         return deferred.promise()
       }
-    })
-
-    Anvil.initLocationAccess({
+    },
+    location: {
       hash: function () {
         return location.hash.substring(1)
       },
       path: function () {
         return location.pathname
       }
-    })
-
-    Anvil.initDOMAccess({
+    },
+    dom: {
       getWindow: function () {
         return window
       },
       getDocument: function () {
         return document
       }
-    })
-
-    window.addEventListener('storage', Anvil.updateSession, true)
-
-    /**
-     * Reinstate an existing session
-     */
-
-    Anvil.deserialize()
-  }
-
-  Anvil.init = init
-
+    }
+  })
   return Anvil
-})()
+}

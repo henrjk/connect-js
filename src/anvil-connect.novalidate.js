@@ -1,4 +1,4 @@
-/* global Anvil, jwt_decode  */
+/* eslint-env es6 */
 
 // WARNING: jwt tokes are not validated by this module!
 //
@@ -21,7 +21,10 @@
 // validating the tokens and may be useful for a certain class of browser
 // applications.
 
-(function (exports) {
+import jwt_decode from 'jwt-decode'
+
+/* eslint-disable indent */
+// (function (exports) {
   'use strict'
 
   var Validate = {}
@@ -30,7 +33,8 @@
    * Provider configuration
    */
 
-  function configure (options) {
+  function configure (anvil, options) {
+    Validate.anvil = anvil
   }
 
   Validate.configure = configure
@@ -41,9 +45,9 @@
    * Nothing to do really but callers expect a promise return value
    */
   function prepareValidate () {
-    var deferred = Anvil.apiDefer.defer()
+    var deferred = Validate.anvil.apiDefer.defer()
     deferred.resolve()
-    return Anvil.apiDefer.deferToPromise(deferred)
+    return Validate.anvil.apiDefer.deferToPromise(deferred)
   }
 
   Validate.prepareValidate = prepareValidate
@@ -63,11 +67,5 @@
 
   Validate.validateAndParseToken = validateAndParseToken
 
-  /**
-   * Export
-   */
-
-  exports.validate = Validate
-
-  return exports.validate
-})(Anvil)
+  export default Validate
+// })(Anvil)

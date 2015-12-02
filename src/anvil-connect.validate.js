@@ -1,8 +1,12 @@
-/* global Anvil, localStorage, bows, b64utohex, KJUR  */
+/* eslint-env es6 */
+
+import bows from 'bows'
+
 
 /* eslint-disable no-shadow-restricted-names */
-(function (Anvil, undefined) {
+//(function (Anvil, undefined) {
 /* eslint-enable no-shadow-restricted-names */
+/* eslint-disable indent */
 
   'use strict'
 
@@ -136,11 +140,5 @@
 
   Validate.validateAndParseToken = validateAndParseToken
 
-  /**
-   * Export
-   */
-
-  Anvil.validate = Validate
-
-  return Anvil.validate
-})(Anvil)
+  export default Validate
+//})(Anvil)
