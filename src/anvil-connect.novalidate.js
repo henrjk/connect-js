@@ -23,49 +23,46 @@
 
 import jwt_decode from 'jwt-decode'
 
-/* eslint-disable indent */
-// (function (exports) {
-  'use strict'
+'use strict'
 
-  var Validate = {}
-
-  /**
-   * Provider configuration
-   */
-
-  function configure (anvil, options) {
-    Validate.anvil = anvil
-  }
-
-  Validate.configure = configure
-
-  /*
-   * Prepare validate
-   *
-   * Nothing to do really but callers expect a promise return value
-   */
-  function prepareValidate () {
-    var deferred = Validate.anvil.apiDefer.defer()
-    deferred.resolve()
-    return Validate.anvil.apiDefer.deferToPromise(deferred)
-  }
-
-  Validate.prepareValidate = prepareValidate
+var Validate = {}
 
 /**
-   * Validate tokens
-   */
+ * Provider configuration
+ */
 
-  function validateAndParseToken (token) {
-    if (!token) {
-      return undefined
-    }
+function configure (anvil, options) {
+  Validate.anvil = anvil
+}
 
-    var claims = jwt_decode(token)
-    return claims
+Validate.configure = configure
+
+/*
+ * Prepare validate
+ *
+ * Nothing to do really but callers expect a promise return value
+ */
+function prepareValidate () {
+  var deferred = Validate.anvil.apiDefer.defer()
+  deferred.resolve()
+  return Validate.anvil.apiDefer.deferToPromise(deferred)
+}
+
+Validate.prepareValidate = prepareValidate
+
+/**
+ * Validate tokens
+ */
+
+function validateAndParseToken (token) {
+  if (!token) {
+    return undefined
   }
 
-  Validate.validateAndParseToken = validateAndParseToken
+  var claims = jwt_decode(token)
+  return claims
+}
 
-  export default Validate
-// })(Anvil)
+Validate.validateAndParseToken = validateAndParseToken
+
+export default Validate
