@@ -1,18 +1,17 @@
 /* eslint-env es6 */
 /* global localStorage */
 
-var Anvil = {}
+'use strict'  // ES6 modules are strict but may be safer for transpiling perhaps
 
 import bows from 'bows'
 import TinyEmitter from 'tiny-emitter'
-import jwtvalidator from 'anvil-connect-jwt-validator'
+import * as jwtvalidator from 'anvil-connect-jwt-validator'
 import sjcl from 'sjcl'
 
-'use strict'
+let log = bows('Anvil')
 
-var log = bows('Anvil')
-
-var session = {}
+let session = {}
+let Anvil = {}
 
 // All init functions below must be called!
 /**

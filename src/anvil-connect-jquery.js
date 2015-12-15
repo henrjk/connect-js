@@ -1,6 +1,8 @@
 /* eslint-env es6 */
 /* global location */
 
+'use strict'  // ES6 modules are strict but may be safer for transpiling perhaps
+
 import Anvil from './anvil-connect'
 import jQuery from 'jquery'
 

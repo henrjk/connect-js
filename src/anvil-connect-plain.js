@@ -1,7 +1,7 @@
 /* eslint-env es6 */
 /* global location */
 
-'use strict'
+'use strict'  // ES6 modules are strict but may be safer for transpiling perhaps
 
 import Q from 'q'
 import Anvil from './anvil-connect'

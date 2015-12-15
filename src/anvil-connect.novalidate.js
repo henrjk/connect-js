@@ -21,40 +21,36 @@
 // validating the tokens and may be useful for a certain class of browser
 // applications.
 
+'use strict'  // ES6 modules are strict but may be safer for transpiling perhaps
+
 import jwt_decode from 'jwt-decode'
 
-'use strict'
-
-var Validate = {}
+let m_anvil
 
 /**
  * Provider configuration
  */
 
-function configure (anvil, options) {
-  Validate.anvil = anvil
+export function configure (anvil, options) {
+  m_anvil = anvil
 }
-
-Validate.configure = configure
 
 /*
  * Prepare validate
  *
  * Nothing to do really but callers expect a promise return value
  */
-function prepareValidate () {
-  var deferred = Validate.anvil.apiDefer.defer()
+export function prepareValidate () {
+  var deferred = m_anvil.apiDefer.defer()
   deferred.resolve()
-  return Validate.anvil.apiDefer.deferToPromise(deferred)
+  return m_anvil.apiDefer.deferToPromise(deferred)
 }
-
-Validate.prepareValidate = prepareValidate
 
 /**
  * Validate tokens
  */
 
-function validateAndParseToken (token) {
+export function validateAndParseToken (token) {
   if (!token) {
     return undefined
   }
@@ -62,7 +58,3 @@ function validateAndParseToken (token) {
   var claims = jwt_decode(token)
   return claims
 }
-
-Validate.validateAndParseToken = validateAndParseToken
-
-export default Validate
