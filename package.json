@@ -64,9 +64,12 @@
   "jspm": {
     "main": "anvil-connect",
     "format": "es6",
-    "registry": "jspm",
+    "registry": "github",
     "directories" : {
       "lib": "src"
+    },
+    "map": {
+      "anvil-connect-jwt-validator": "./anvil-connect.novalidate.js"
     },
     "dependencies": {
       "angular": "github:angular/bower-angular@^1.4.8",
