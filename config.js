@@ -18,6 +18,7 @@ System.config({
     "anvil-connect-jwt-validator": "src/anvil-connect.novalidate",
     "babel": "npm:babel-core@5.8.34",
     "babel-runtime": "npm:babel-runtime@5.8.34",
+    "base64-js": "npm:base64-js@0.0.8",
     "bows": "npm:bows@1.4.8",
     "capaj/jspm-hot-reloader": "github:capaj/jspm-hot-reloader@0.4.3",
     "core-js": "npm:core-js@1.2.6",

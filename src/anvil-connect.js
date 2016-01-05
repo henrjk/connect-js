@@ -7,6 +7,8 @@ import bows from 'bows'
 import TinyEmitter from 'tiny-emitter'
 import * as jwtvalidator from 'anvil-connect-jwt-validator'
 import sjcl from 'sjcl'
+import * as subtle_crypt from './subtle_encrypt'
+import {str2ab, ab2str, ab2base64str, base64str2ab} from './ab_utils'
 
 let log = bows('Anvil')
 
@@ -258,7 +260,7 @@ Anvil.session = session
  * Serialize session
  */
 
-function serialize () {
+function serializeOld () {
   var now = new Date()
   var time = now.getTime()
   var exp = time + (Anvil.session.expires_in || 3600) * 1000
@@ -275,13 +277,80 @@ function serialize () {
   log.debug('SERIALIZED', encrypted)
 }
 
+function secrets2str(abIv, abKey) {
+  const b64Iv = ab2base64str(abIv)
+  const b64Key = ab2base64str(abKey)
+  return '' + b64Iv + '.' + b64Key
+}
+
+function str2secrets(str) {
+  const pair = str.split('.')
+  if (pair.length) {
+    throw new Error('Expected format of string is <base64>.<base64>')
+  }
+  const abs = pair.map( base64str2ab)
+  return abs
+}
+
+function serialize () {
+  let plaintext = JSON.stringify(Anvil.session)
+  return subtle_crypt.genKeyAndEncrypt(str2ab(plaintext)).then( r => {
+    const secret = secrets2str(r.abIv, r.abKey)
+    return {secret: secret, encrypted: ab2base64str(r.abEncrypted)}
+  }).then(r => {
+    var now = new Date()
+    var time = now.getTime()
+    var exp = time + (Anvil.session.expires_in || 3600) * 1000
+
+    now.setTime(exp)
+    this.domAccess.getDocument().cookie = 'anvil.connect=' + r.secret +
+      '; expires=' + now.toUTCString()
+
+    localStorage['anvil.connect'] = r.encrypted
+    localStorage['anvil.connect.session.state'] = Anvil.sessionState
+    log.debug('SERIALIZED', r.encrypted)
+  })
+}
+
 Anvil.serialize = serialize
 
 /**
  * Deserialize session
  */
-
 function deserialize () {
+  var parsed
+
+  const p = new Promise(function (resolve, reject) {
+    // Use the cookie value to decrypt the session in localStorage
+    // Exceptions may occur if data is unexpected or there is no
+    // session data yet.
+    const re = /\banvil\.connect=([^\s;]*)/
+    const secret = this.domAccess.getDocument().cookie.match(re).pop()
+    const secrets = str2secrets(secret)
+    const encrypted = base64str2ab(localStorage['anvil.connect'])
+    resolve([secrets[0], secrets[1], encrypted])
+  })
+
+  return p.then(r => {
+    return subtle_crypt.decrypt(r[1], r[0], r[2]).then(abPlaintext => {
+      const json = ab2str(abPlaintext)
+      // exceptions when parsing json causes the promise to be rejected
+      return JSON.parse(json)
+    })
+  }).then( parsed => {
+    log.debug('Deserialized session data', parsed.userInfo)
+    Anvil.session = session = parsed
+    Anvil.sessionState = localStorage['anvil.connect.session.state']
+    return session
+  }).catch( e => {
+    log.debug('Cannot deserialize session data', e, e.stack)
+    Anvil.session = session = parsed || {}
+    Anvil.sessionState = localStorage['anvil.connect.session.state']
+  })
+}
+
+
+function deserializeOld () {
   var re, secret, json, parsed
 
   try {

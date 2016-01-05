@@ -79,6 +79,7 @@
     },
     "dependencies": {
       "angular": "angular/bower-angular@^1.4.8",
+      "base64-js": "npm:base64-js@^0.0.8",
       "bows": "npm:bows@^1.4.8",
       "jquery": "components/jquery@^2.1.4",
       "jwt-decode": "npm:jwt-decode@^1.4.0",

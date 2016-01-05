@@ -6,7 +6,6 @@ let crypto = window.crypto
 // see https://github.com/diafygi/webcrypto-examples
 // see http://blog.engelke.com/2014/06/22/symmetric-cryptography-in-the-browser-part-1/
 
-
 export function generateEncryptionKey () {
   return crypto.subtle.generateKey(
     {name: 'AES-CBC', length: 128},
@@ -21,7 +20,7 @@ function exportEncryptionKey (key) {
       ({ encryptionKey: key, exportedKey: keyData }))
 }
 
-function encryptArrayBuffer (key, abPlainText) {
+function encryptArrayBuffer ({key, abPlainText}) {
   const iv = crypto.getRandomValues(new Uint8Array(16))
   return crypto.subtle.encrypt(
     {
@@ -40,7 +39,7 @@ export function genKeyAndEncrypt (abPlainText) {
   return generateEncryptionKey()
     .then(exportEncryptionKey)
     .then(key => {
-      return encryptArrayBuffer(key, abPlainText)
+      return encryptArrayBuffer({key, abPlainText})
     })
 }
 
@@ -53,19 +52,19 @@ function importEncryptionKey (abKeyData) {
   )
 }
 
-function decryptArrayBuffer (key, abIv, abEncryptedText) {
+function decryptArrayBuffer ({key, abIv, abEncrypted}) {
   return crypto.subtle.decrypt(
     {
       name: 'AES-CBC',
       iv: abIv
     },
     key,
-    abEncryptedText)
+    abEncrypted)
 }
 
-export function decrypt (abKey, abIv, abEncryptedText) {
+export function decrypt ({abKey, abIv, abEncrypted}) {
   return importEncryptionKey(abKey)
     .then(key => {
-      return decryptArrayBuffer(key, abIv, abEncryptedText)
+      return decryptArrayBuffer({key, abIv, abEncrypted})
     })
 }

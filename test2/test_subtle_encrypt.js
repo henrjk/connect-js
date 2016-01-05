@@ -26,7 +26,7 @@ describe('Check generateEncryptionKey produces key', () => {
 })
 
 
-ddescribe('Check encrypt/decrypt based on subtle webcrypto', () => {
+describe('Check encrypt/decrypt based on subtle webcrypto', () => {
 
   let input = {}
   let result = {}
@@ -35,7 +35,7 @@ ddescribe('Check encrypt/decrypt based on subtle webcrypto', () => {
   beforeEach(done => {
     input.abPlaintext = str2ab(plaintext)
     se.genKeyAndEncrypt(input.abPlaintext).then(r => {
-      return se.decrypt(r.abKey, r.abIv, r.abEncrypted)
+      return se.decrypt(r)
     }).then(abDecrypted => {
       result.abDecrypted = abDecrypted
       done()

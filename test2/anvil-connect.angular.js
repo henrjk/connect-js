@@ -102,11 +102,17 @@ describe('Anvil Connect', function () {
     })
   })
 
-  describe('serialize', function () {
-    beforeEach(function () {
+  ddescribe('serialize', function () {
+    beforeEach(function (done) {
       delete localStorage['anvil.connect']
       Anvil.session.access_token = 'random'
-      Anvil.serialize()
+      Anvil.serialize().then(r => {
+        this.result = r
+        done()
+      }).catch(e => {
+        this.exception = e
+        done()
+      })
     })
 
     it('should store the current session in localStorage', function () {

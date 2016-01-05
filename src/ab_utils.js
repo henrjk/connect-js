@@ -1,11 +1,13 @@
+import * as base64 from 'base64-js'
 // see jsperf.com/hex-conversion
+
 const hexChars = '0123456789abcdef'
 const hexEncodeArray = hexChars.split('')
 
 export function ab2hex (ab) {
   let arr = new Uint8Array(ab)
   let s = ''
-  for (var i=0, n=ab.byteLength; i < n; i++) {
+  for (var i = 0 ,n = ab.byteLength; i < n; i++) {
     const byte = arr[i]
     s += hexEncodeArray[byte >>> 4]
     s += hexEncodeArray[byte & 0x0f]
@@ -13,7 +15,7 @@ export function ab2hex (ab) {
   return s
 }
 
-function hexdigit(c) {
+function hexdigit (c) {
   const i = hexChars.indexOf(c)
   if (i < 0) {
     throw new Error(`Character '${c}' is not a valid hex character: expected '${hexChars}'`)
@@ -74,7 +76,6 @@ export function hex2ab (hexstr) {
 //
 // http://stackoverflow.com/questions/5943726/string-charatx-or-stringx
 
-
 export function utf8str2ab (str) {
   let buf = new ArrayBuffer(str.length)
   let view = new Uint8Array(buf)
@@ -116,3 +117,38 @@ export function ab2str (ab) {
   return String.fromCharCode.apply(null, new Uint16Array(ab))
 }
 
+export function ascii2ab (str) {
+  const strlen = str.length
+  let buf = new ArrayBuffer(strlen)
+  let view = new Uint8Array(buf)
+  for (var i = 0; i < strlen; i++) {
+    const cc = str.charCodeAt(i)
+    if (cc > 127) {
+      throw new Error(`String contains non ascii characters: charCode = '${cc}' at index '${i}'`)
+    }
+    view[i] = cc
+  }
+  return buf
+}
+
+export function ab2ascii (ab) {
+  const view = new Uint8Array(ab)
+  const len = view.length
+  let s = ''
+  for (var i = 0; i < len; i++) {
+    const cc = ab[i]
+    if (cc > 127) {
+      throw new Error(`String contains non ascii characters: charCode = '${cc}' at index '${i}'`)
+    }
+    s += String.fromCharCode(cc)
+  }
+  return s
+}
+
+export function base64str2ab (base64str) {
+  return base64.toByteArray(base64str)
+}
+
+export function ab2base64str (buf) {
+  return base64.fromByteArray(new Uint8Array(buf))
+}
