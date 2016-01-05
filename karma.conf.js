@@ -16,12 +16,12 @@ module.exports = function (config) {
     frameworks: ['jspm', 'jasmine'],
 
     // list of files / patterns to load in the browser
-    files: ['test2/**/*.coffee'],
+    files: [],
 
     jspm: {
       config: 'config.js',
       loadFiles: ['test2/**/*'],
-      serveFiles: ['src/anvil-*.js'],
+      serveFiles: ['src/*.js'],
       paths: {
       //   'src/*': 'base/src/*',
       //   'test/*': 'base/test2/*',

@@ -15,7 +15,7 @@
       // server opened at http://127.0.0.1:8080/ so this is not localhost
       //if (location.origin.match(/localhost/)) {
         System.trace = true
-        System.import('capaj/jspm-hot-reloader').then(function(HotReloader){
+        System.import('jspm_packages/capaj/jspm-hot-reloader').then(function(HotReloader){
           new HotReloader.default('http://localhost:9080')  // chokidar-socket-emitter port
         })
       //}
