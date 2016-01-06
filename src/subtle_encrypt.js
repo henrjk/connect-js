@@ -1,6 +1,9 @@
 /**
  * Created by dev on 27/12/15.
  */
+
+import {ab2hex} from './ab_utils'
+
 let crypto = window.crypto
 
 // see https://github.com/diafygi/webcrypto-examples
@@ -67,4 +70,8 @@ export function decrypt ({abKey, abIv, abEncrypted}) {
     .then(key => {
       return decryptArrayBuffer({key, abIv, abEncrypted})
     })
+}
+
+export function sha256 (ab) {
+  return crypto.subtle.digest('SHA-256', ab)
 }

@@ -27,6 +27,7 @@ System.config({
     "kriskowal/q": "github:kriskowal/q@2.0.2",
     "q": "npm:q@1.4.1",
     "sjcl": "npm:sjcl@1.0.3",
+    "text-encoder-lite": "npm:text-encoder-lite@1.0.0",
     "tiny-emitter": "npm:tiny-emitter@1.0.1",
     "github:angular/bower-angular-mocks@1.4.8": {
       "angular": "github:angular/bower-angular@1.4.8"

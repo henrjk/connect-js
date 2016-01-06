@@ -2,6 +2,8 @@ import {
   hex2ab, ab2hex,
   ab2str, str2ab,
   base64str2ab, ab2base64str,
+  base64urlstr2ab, ab2base64urlstr,
+  str2utf8ab, abutf82str,
   ascii2ab, ab2ascii} from '../src/ab_utils'
 
 describe('Check ab_utils conversion hex to arraybuffer conversion', () => {
@@ -123,7 +125,6 @@ describe('Check ab_utils conversion arraybuffer to str', () => {
 })
 
 describe('Check ab_utils base64 support', () => {
-  base64str2ab, ab2base64str
   const testdata = new Map([
     ["f", "Zg=="],
     ["fo", "Zm8="],
@@ -131,7 +132,7 @@ describe('Check ab_utils base64 support', () => {
     ["foob", "Zm9vYg=="],
     ["fooba", "Zm9vYmE="],
     ["foobar", "Zm9vYmFy"]
-    ])
+  ])
 
   it('base64str2ab of empty string is 0 bytes long', () => {
     let ab = base64str2ab('')
@@ -139,7 +140,7 @@ describe('Check ab_utils base64 support', () => {
   })
 
   it('base64 conversion of some test values to check out', () => {
-    function expect_roundtrip (plaintext) {
+    function expect_roundtrip(plaintext) {
       let ab = str2ab(plaintext)
       let str = ab2base64str(ab)
       expect(str).toBeDefined()
@@ -147,7 +148,7 @@ describe('Check ab_utils base64 support', () => {
       expect(cycled).toBeDefined()
       expect(
         Array.from(new Uint8Array(cycled))).toEqual(
-          Array.from(new Uint8Array(ab)))
+        Array.from(new Uint8Array(ab)))
     }
 
     expect_roundtrip('')
@@ -176,8 +177,84 @@ describe('Check ab_utils base64 support', () => {
       expect(str).toEqual(expected)
     }
 
-    expect_ab2base64str('foob'.split('').map( c => c.charCodeAt(0)), "Zm9vYg==")
+    expect_ab2base64str('foob'.split('').map(c => c.charCodeAt(0)), "Zm9vYg==")
     expect(ab2base64str(ascii2ab('foob'))).toEqual("Zm9vYg==")
   })
+})
 
+
+function arr2byteArray(arr) {
+  let v = new Uint8Array(arr.length)
+  let i = 0
+  for (let b of arr) {
+    v[i++] = b
+  }
+  return v
+}
+
+function byteArray2arr(ba) {
+  return Array.from(new Uint8Array(ba))
+}
+
+describe('Check ab_utils base64url support', () => {
+
+  it('base64urlstr2ab of empty string is 0 bytes long', () => {
+    let ab = base64urlstr2ab('')
+    expect(ab.byteLength).toBe(0)
+  })
+
+  it('base64url conversion of some test values to check out', () => {
+    function expect_roundtrip (plaintext) {
+      let ab = str2ab(plaintext)
+      let str = ab2base64urlstr(ab)
+      expect(str).toBeDefined()
+      let cycled = base64urlstr2ab(str)
+      expect(cycled).toBeDefined()
+      expect(
+        Array.from(new Uint8Array(cycled))).toEqual(
+        Array.from(new Uint8Array(ab)))
+    }
+
+    expect_roundtrip('')
+    expect_roundtrip('ABC')
+    expect_roundtrip('A\u{1F4A9}C')
+  })
+
+  it('should encode some values', () => {
+    function expect_ab2base64urlstr(arr, expected) {
+      let v = arr2byteArray(arr)
+      let str = ab2base64urlstr(v)
+      expect(str).toEqual(expected)
+      return str
+    }
+
+    expect_ab2base64urlstr('foob'.split('').map(c => c.charCodeAt(0)), 'Zm9vYg')
+    expect(ab2base64urlstr(ascii2ab('foob'))).toEqual('Zm9vYg')
+    let arr = 'C\xef\xe4'.split('').map(c => c.charCodeAt(0))
+    let str = expect_ab2base64urlstr( arr, 'Q-_k')
+    expect(byteArray2arr(base64urlstr2ab(str))).toEqual(arr)
+  })
+
+})
+
+describe('Check ab_utils utf8 support', () => {
+
+  it('str2utf8ab of empty string is 0 bytes long', () => {
+    let ab = str2utf8ab('')
+    expect(ab.byteLength).toBe(0)
+  })
+
+  it('str2utf8ab conversion of some test values to check out', () => {
+    function expect_roundtrip (text) {
+      let ab = str2utf8ab(text)
+      expect(ab).toBeDefined()
+      let cycled = abutf82str(ab)
+      expect(cycled).toBeDefined()
+      expect(cycled).toEqual(text)
+    }
+
+    expect_roundtrip('')
+    expect_roundtrip('ABC')
+    expect_roundtrip('A\u{1F4A9}C')
+  })
 })

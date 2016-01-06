@@ -8,7 +8,11 @@ import TinyEmitter from 'tiny-emitter'
 import * as jwtvalidator from 'anvil-connect-jwt-validator'
 import sjcl from 'sjcl'
 import * as subtle_crypt from './subtle_encrypt'
-import {str2ab, ab2str, ab2base64str, base64str2ab} from './ab_utils'
+import {
+  str2ab, ab2str,
+  ab2base64str, base64str2ab,
+  ab2base64urlstr,
+  str2utf8ab} from './ab_utils'
 
 let log = bows('Anvil')
 
@@ -257,27 +261,10 @@ Anvil.popup = popup
 Anvil.session = session
 
 /**
- * Serialize session
+ * Serialize session helpers
  */
 
-function serializeOld () {
-  var now = new Date()
-  var time = now.getTime()
-  var exp = time + (Anvil.session.expires_in || 3600) * 1000
-  var random = Math.random().toString(36).substr(2, 10)
-  var secret = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(random))
-
-  now.setTime(exp)
-  this.domAccess.getDocument().cookie = 'anvil.connect=' + secret +
-    '; expires=' + now.toUTCString()
-
-  var encrypted = sjcl.encrypt(secret, JSON.stringify(Anvil.session))
-  localStorage['anvil.connect'] = encrypted
-  localStorage['anvil.connect.session.state'] = Anvil.sessionState
-  log.debug('SERIALIZED', encrypted)
-}
-
-function secrets2str(abIv, abKey) {
+function secrets2str({abIv, abKey}) {
   const b64Iv = ab2base64str(abIv)
   const b64Key = ab2base64str(abKey)
   return '' + b64Iv + '.' + b64Key
@@ -292,23 +279,28 @@ function str2secrets(str) {
   return abs
 }
 
+/**
+ * Serialize session
+ */
+
 function serialize () {
   let plaintext = JSON.stringify(Anvil.session)
-  return subtle_crypt.genKeyAndEncrypt(str2ab(plaintext)).then( r => {
-    const secret = secrets2str(r.abIv, r.abKey)
-    return {secret: secret, encrypted: ab2base64str(r.abEncrypted)}
-  }).then(r => {
+  return subtle_crypt.genKeyAndEncrypt(str2ab(plaintext))
+  .then(({abIv, abKey, abEncrypted}) => {
+    const secret = secrets2str({abIv, abKey})
+    return {secret: secret, encrypted: ab2base64str(abEncrypted)}
+  }).then(({secret, encrypted}) => {
     var now = new Date()
     var time = now.getTime()
     var exp = time + (Anvil.session.expires_in || 3600) * 1000
 
     now.setTime(exp)
-    this.domAccess.getDocument().cookie = 'anvil.connect=' + r.secret +
+    this.domAccess.getDocument().cookie = 'anvil.connect=' + secret +
       '; expires=' + now.toUTCString()
 
-    localStorage['anvil.connect'] = r.encrypted
+    localStorage['anvil.connect'] = encrypted
     localStorage['anvil.connect.session.state'] = Anvil.sessionState
-    log.debug('SERIALIZED', r.encrypted)
+    log.debug('SERIALIZED', encrypted)
   })
 }
 
@@ -349,27 +341,6 @@ function deserialize () {
   })
 }
 
-
-function deserializeOld () {
-  var re, secret, json, parsed
-
-  try {
-    // Use the cookie value to decrypt the session in localStorage
-    re = /\banvil\.connect=([^\s;]*)/
-    secret = this.domAccess.getDocument().cookie.match(re).pop()
-    json = sjcl.decrypt(secret, localStorage['anvil.connect'])
-    parsed = JSON.parse(json)
-    log.debug('Deserialized session data', parsed.userInfo)
-  } catch (e) {
-    // this is not unexpected.
-    log.debug('Cannot deserialize session data', e, e.stack)
-  }
-
-  Anvil.session = session = parsed || {}
-  Anvil.sessionState = localStorage['anvil.connect.session.state']
-  return session
-}
-
 Anvil.deserialize = deserialize
 
 /**
@@ -401,18 +372,24 @@ Anvil.uri = uri
 /**
  * Create or verify a nonce
  */
-
 function nonce (nonce) {
-  if (nonce) {
-    var lnonce = localStorage['nonce']
-    if (!lnonce) {
-      return false
+  const p = new Promise( function (resolve, reject) {
+    if (nonce) {
+      var lnonce = localStorage['nonce']
+      if (!lnonce) {
+        return resolve(false)
+      }
+      Anvil.sha256url(localStorage['nonce']).then( val => {
+        resolve(val=== nonce)
+      })
+    } else {
+      localStorage['nonce'] = Math.random().toString(36).substr(2, 10)
+      Anvil.sha256url(localStorage['nonce']).then( val => {
+        resolve(val)
+      })
     }
-    return (Anvil.sha256url(localStorage['nonce']) === nonce)
-  } else {
-    localStorage['nonce'] = Math.random().toString(36).substr(2, 10)
-    return this.sha256url(localStorage['nonce'])
-  }
+  })
+  return p
 }
 
 Anvil.nonce = nonce
@@ -420,9 +397,8 @@ Anvil.nonce = nonce
 /**
  * Base64url encode a SHA256 hash of the input string
  */
-
 function sha256url (str) {
-  return sjcl.codec.base64url.fromBits(sjcl.hash.sha256.hash(str))
+  return subtle_crypt.sha256(str2utf8ab(str)).then(ab2base64urlstr)
 }
 
 Anvil.sha256url = sha256url

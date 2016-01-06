@@ -1,4 +1,5 @@
 import * as base64 from 'base64-js'
+import 'text-encoder-lite'
 // see jsperf.com/hex-conversion
 
 const hexChars = '0123456789abcdef'
@@ -76,30 +77,24 @@ export function hex2ab (hexstr) {
 //
 // http://stackoverflow.com/questions/5943726/string-charatx-or-stringx
 
-export function utf8str2ab (str) {
-  let buf = new ArrayBuffer(str.length)
-  let view = new Uint8Array(buf)
-  for (var i = 0, strlen = str.length; i < strlen; i++) {
-    view[i] = str.charCodeAt(i)
-    // don't use charAt(i) here.
-  }
-  return buf
+// Encoding a JavaScript string as UTF-8 in an array buffer should be more
+// straightforward to code in ES6 as one iterator over the unicode points
+// simply like this:
+// for (let c of str) {
+//   let cp = ch.codePointAt(0)  // do something with code point.
+//
+// However at the moment I'd rather use the TextEncodeLite library for this.
+// (https://github.com/coolaj86/TextEncoderLite)
+//
+// This is not a major endorsenment for that library. I took it because it is
+// lean and mentioned on the MDN (https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#Solution_.232_.E2.80.93_rewriting_atob()_and_btoa()_using_TypedArrays_and_UTF-8
+
+export function str2utf8ab (str) {
+  return new TextEncoderLite('utf-8').encode(str)
 }
 
-export function ab2utf8str (ab) {
-  let view = new Uint8Array(ab)
-  let unis = []
-  for (var i = 0, len = view.length; i < len; i++) {
-    view[i] = str.charCodeAt(i)
-    // don't use charAt(i) here.
-  }
-
-  let buf = new ArrayBuffer(str.length)
-  for (var i = 0, strlen = str.length; i < strlen; i++) {
-    view[i] = str.charCodeAt(i)
-    // don't use charAt(i) here.
-  }
-  return buf
+export function abutf82str (ab) {
+  return new TextDecoderLite('utf-8').decode(ab)
 }
 
 export function str2ab (str) {
@@ -151,4 +146,22 @@ export function base64str2ab (base64str) {
 
 export function ab2base64str (buf) {
   return base64.fromByteArray(new Uint8Array(buf))
+}
+
+export function base64urlstr2ab (base64urlstr) {
+  // Decode url-safe style base64: https://github.com/beatgammit/base64-js/pull/10
+  // however '=' padding characters must be added...
+  let str = base64urlstr
+  let npad = 4 - str.length % 4
+  if (npad === 4) {
+    npad = 0
+  }
+  str = (str + '===').slice(0, str.length + npad)
+  return base64.toByteArray(str)
+}
+
+export function ab2base64urlstr (buf) {
+  const str = base64.fromByteArray(new Uint8Array(buf))
+  // '=' is percent encoded in an URL so strip this:
+  return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
 }

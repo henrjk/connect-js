@@ -3,6 +3,8 @@
 
 import {module, inject} from 'angular-mocks'
 import '../src/anvil-connect-angular'
+import sjcl from 'sjcl'
+
 
 'use strict'
 
@@ -102,7 +104,7 @@ describe('Anvil Connect', function () {
     })
   })
 
-  ddescribe('serialize', function () {
+  describe('serialize', function () {
     beforeEach(function (done) {
       delete localStorage['anvil.connect']
       Anvil.session.access_token = 'random'
@@ -243,32 +245,71 @@ describe('Anvil Connect', function () {
   })
 
   describe('nonce without argument', function () {
+    let result = {}
+    beforeEach(function (done) {
+      Anvil.nonce().then(nonce => {
+        result.nonce = nonce
+        done()
+      }).catch(e => {
+        result.err = e
+        done()
+      })
+    })
     it('should return a base64url encoded sha256 hash of a random value', function () {
-      expect(Anvil.nonce().length).toBe(43)
+      expect(result.nonce.length).toBe(43)
     })
 
     it('should store the nonce in localStorage', function () {
-      nonce = Anvil.nonce()
       expect(localStorage['nonce'].length).toBe(10)
     })
   })
 
   describe('nonce with argument', function () {
-    beforeEach(function () {
-      nonce = Anvil.nonce()
+    let result = {}
+    beforeEach(function (done) {
+      Anvil.nonce().then(nonce => {
+        result.nonce = nonce
+        done()
+      }).catch(e => {
+        result.err = e
+        done()
+      })
     })
 
-    it('should verify an argument matching a hash of the value in localStorage', function () {
-      expect(Anvil.nonce(nonce)).toBe(true)
+    it('should verify an argument matching a hash of the value in localStorage', function (done) {
+      Anvil.nonce(result.nonce).then( val => {
+        expect(val).toBe(true)
+        done()
+      })
     })
 
-    it('should not verify a mismatching argument', function () {
-      expect(Anvil.nonce('WRONG')).toBe(false)
+    it('should not verify a mismatching argument', function (done) {
+      Anvil.nonce('WRONG').then( val => {
+        expect(val).toBe(false)
+        done()
+      })
     })
   })
 
   describe('sha256url', function () {
-    it('should base64url encode the SHA 256 hash of a provided string')
+    let result = {}
+    const input = 'test'
+
+    beforeEach(function (done) {
+      Anvil.sha256url(input).then(r => {
+        result.sha256url = r
+        done()
+      }).catch(e => {
+        result.err = e
+        done()
+      })
+    })
+    it('should base64url encode the SHA 256 hash of a provided string', () => {
+      let oldresult = sjcl.codec.base64url.fromBits(sjcl.hash.sha256.hash(input))
+      expect(oldresult).toEqual('n4bQgYhMfWWaL-qgxVrQFaO_TxsrC4Is0V1sFbDwCgg')
+      expect(result.sha256url).toEqual(oldresult)
+      expect(result.sha256url).toEqual('n4bQgYhMfWWaL-qgxVrQFaO_TxsrC4Is0V1sFbDwCgg')
+    })
   })
 
   describe('headers', function () {
