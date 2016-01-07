@@ -41,9 +41,7 @@ export function configure (anvil, options) {
  * Nothing to do really but callers expect a promise return value
  */
 export function prepareValidate () {
-  var deferred = m_anvil.apiDefer.defer()
-  deferred.resolve()
-  return m_anvil.apiDefer.deferToPromise(deferred)
+  return Promise.resolve()
 }
 
 /**
@@ -51,10 +49,16 @@ export function prepareValidate () {
  */
 
 export function validateAndParseToken (token) {
-  if (!token) {
-    return undefined
-  }
-
-  var claims = jwt_decode(token)
-  return claims
+  return new Promise( function (resolve, reject) {
+    if (!token) {
+      resolve(undefined)
+    } else {
+      try {
+        var claims = jwt_decode(token)
+        resolve(claims)
+      } catch (err) {
+        reject(err)
+      }
+    }
+  })
 }

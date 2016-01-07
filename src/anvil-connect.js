@@ -6,9 +6,9 @@
 import bows from 'bows'
 import TinyEmitter from 'tiny-emitter'
 import * as jwtvalidator from 'anvil-connect-jwt-validator'
-import sjcl from 'sjcl'
 import * as subtle_crypt from './subtle_encrypt'
 import {
+  ab2hex,
   str2ab, ab2str,
   ab2base64str, base64str2ab,
   ab2base64urlstr,
@@ -43,17 +43,6 @@ function initHttpAccess (http) {
 }
 
 Anvil.initHttpAccess = initHttpAccess
-
-function initDeferred (deferred) {
-  if (deferred && typeof deferred === 'object' &&
-    typeof deferred.defer === 'function' &&
-    typeof deferred.deferToPromise === 'function') {
-    Anvil.apiDefer = this.apiDefer = deferred
-    return
-  }
-  throw new Error("Must pass in object with functions in fields: 'defer', 'deferToPromise'.")
-}
-Anvil.initDeferred = initDeferred
 
 /**
  *  Init functions for location access.
@@ -142,8 +131,6 @@ function init (providerOptions, apis) {
 
   Anvil.initHttpAccess(apis.http)
 
-  Anvil.initDeferred(apis.deferred)
-
   Anvil.initLocationAccess(apis.location)
 
   Anvil.initDOMAccess(apis.dom)
@@ -154,7 +141,11 @@ function init (providerOptions, apis) {
    * Reinstate an existing session
    */
 
-  Anvil.deserialize()
+  Anvil.deserialize().then(
+    v => v,
+    e => {
+      log.debug('Ignore promise rejection of session deserialize')
+    })
 }
 
 Anvil.init = init
@@ -264,18 +255,18 @@ Anvil.session = session
  * Serialize session helpers
  */
 
-function secrets2str({abIv, abKey}) {
+function secrets2str ({abIv, abKey}) {
   const b64Iv = ab2base64str(abIv)
   const b64Key = ab2base64str(abKey)
   return '' + b64Iv + '.' + b64Key
 }
 
-function str2secrets(str) {
+function str2secrets (str) {
   const pair = str.split('.')
   if (pair.length) {
     throw new Error('Expected format of string is <base64>.<base64>')
   }
-  const abs = pair.map( base64str2ab)
+  const abs = pair.map(base64str2ab)
   return abs
 }
 
@@ -312,12 +303,13 @@ Anvil.serialize = serialize
 function deserialize () {
   var parsed
 
+  let dom = this.domAccess.getDocument()
   const p = new Promise(function (resolve, reject) {
     // Use the cookie value to decrypt the session in localStorage
     // Exceptions may occur if data is unexpected or there is no
     // session data yet.
     const re = /\banvil\.connect=([^\s;]*)/
-    const secret = this.domAccess.getDocument().cookie.match(re).pop()
+    const secret = dom.cookie.match(re).pop()
     const secrets = str2secrets(secret)
     const encrypted = base64str2ab(localStorage['anvil.connect'])
     resolve([secrets[0], secrets[1], encrypted])
@@ -329,12 +321,12 @@ function deserialize () {
       // exceptions when parsing json causes the promise to be rejected
       return JSON.parse(json)
     })
-  }).then( parsed => {
+  }).then(parsed => {
     log.debug('Deserialized session data', parsed.userInfo)
     Anvil.session = session = parsed
     Anvil.sessionState = localStorage['anvil.connect.session.state']
     return session
-  }).catch( e => {
+  }).catch(e => {
     log.debug('Cannot deserialize session data', e, e.stack)
     Anvil.session = session = parsed || {}
     Anvil.sessionState = localStorage['anvil.connect.session.state']
@@ -356,15 +348,17 @@ function reset () {
 Anvil.reset = reset
 
 /**
- * Quick and dirty uri method with nonce
+ * Quick and dirty uri method with nonce (returns promise)
  */
 
 function uri (endpoint, options) {
-  return Anvil.issuer + '/' +
-  (endpoint || 'authorize') + '?' +
-  toFormUrlEncoded(extend({}, Anvil.params, options, {
-    nonce: this.nonce()
-  }))
+  return Anvil.nonce().then(nonce => {
+    return Anvil.issuer + '/' +
+      (endpoint || 'authorize') + '?' +
+      toFormUrlEncoded(extend({}, Anvil.params, options, {
+        nonce: nonce
+      }))
+  })
 }
 
 Anvil.uri = uri
@@ -373,18 +367,18 @@ Anvil.uri = uri
  * Create or verify a nonce
  */
 function nonce (nonce) {
-  const p = new Promise( function (resolve, reject) {
+  const p = new Promise(function (resolve, reject) {
     if (nonce) {
       var lnonce = localStorage['nonce']
       if (!lnonce) {
         return resolve(false)
       }
-      Anvil.sha256url(localStorage['nonce']).then( val => {
-        resolve(val=== nonce)
+      Anvil.sha256url(localStorage['nonce']).then(val => {
+        resolve(val === nonce)
       })
     } else {
       localStorage['nonce'] = Math.random().toString(36).substr(2, 10)
-      Anvil.sha256url(localStorage['nonce']).then( val => {
+      Anvil.sha256url(localStorage['nonce']).then(val => {
         resolve(val)
       })
     }
@@ -426,14 +420,14 @@ Anvil.headers = headers
 function request (config) {
   config.headers = this.headers(config.headers)
   config.crossDomain = true
-  return this.apiHttp.request(config)
+  return Promise.resolve(this.apiHttp.request(config)
     .then(function (val) {
       log.debug('Anvil.request succeeded.', config)
       return val
     }, function (err) {
       log.warn('Anvil.request failed:', config, err.stack)
       throw err
-    })
+    }))
 }
 
 Anvil.request = request
@@ -457,64 +451,88 @@ Anvil.userInfo = userInfo
  */
 
 function callback (response) {
-  var deferred = this.apiDefer.defer()
-
   if (response.error) {
     // clear localStorage/cookie/etc
     Anvil.sessionState = response.session_state
     localStorage['anvil.connect.session.state'] = Anvil.sessionState
     Anvil.reset()
-    deferred.reject(response)
+    return Promise.reject(response.error)
   } else {
     // NEED TO REVIEW THIS CODE FOR SANITY
     // Check the conditions in which some of these verifications
     // are skipped.
+    let apiHttp = this.apiHttp
 
-    try {
-      response.access_claims = jwtvalidator.validateAndParseToken(response.access_token)
-    } catch (e) {
-      deferred.reject('Failed to verify or parse access token')
-    }
-    try {
-      response.id_claims = jwtvalidator.validateAndParseToken(response.id_token)
-    } catch (e) {
-      deferred.reject('Failed to verify or parse id token')
-    }
-
-    // Validate the nonce
-    if (response.id_claims && !Anvil.nonce(response.id_claims.nonce)) {
-      deferred.reject('Invalid nonce.')
-    }
-
-    // Verify at_hash
-    if (['id_token token'].indexOf(Anvil.params.response_type) !== -1) {
-      var sha = sjcl.hash.sha256.hash(response.access_token)
-      var atHash = sjcl.codec.hex.fromBits(sha)
-      atHash = atHash.slice(0, atHash.length / 2)
-      if (response.id_claims && atHash !== response.id_claims.at_hash) {
-        deferred.reject('Invalid access token hash in id token payload')
-      }
-    }
-
-    Anvil.session = response
-    Anvil.sessionState = response.session_state
-    log.debug('CALLBACK SESSION STATE', Anvil.sessionState)
-
-    var apiHttp = this.apiHttp
-    Anvil.userInfo().then(
-      function userInfoSuccess (userInfo) {
+    return Promise.resolve()
+      // 1. validate/parse access token
+      .then(() => {
+        return jwtvalidator.validateAndParseToken(response.access_token)
+      })
+      .catch(e => {
+        log.debug('Exception validating access token', e)
+        throw new Error('Failed to verify or parse access token')
+      })
+      .then(claims => {
+        response.access_claims = claims
+      })
+      // 2. validate/parse id token
+      .then(() => {
+        jwtvalidator.validateAndParseToken(response.id_token)
+      })
+      .catch(e => {
+        log.debug('Exception validating id token', e)
+        throw new Error('Failed to verify or parse id token')
+      })
+      .then(claims => {
+        response.id_claims = claims
+      })
+      // 3. validate nonce
+      .then(() => {
+        if (response.id_claims) {
+          return Anvil.nonce(response.id_claims.nonce)
+        } else {
+          return true
+        }
+      }).then(nonceIsValid => {
+        if (!nonceIsValid) {
+          throw new Error('Invalid nonce.')
+        }
+      })
+      // 4. Verify at_hash
+      .then(() => {
+        if (['id_token token'].indexOf(Anvil.params.response_type) !== -1) {
+          return subtle_crypt.sha256(str2utf8ab(response.access_token))
+            .then(ab2hex).then(atHash => {
+              atHash = atHash.slice(0, atHash.length / 2)
+              if (response.id_claims && atHash !== response.id_claims.at_hash) {
+                throw new Error('Invalid access token hash in id token payload')
+              }
+            })
+        }
+      })
+      // If 1-4 check out establish session:
+      .then(() => {
+        Anvil.session = response
+        Anvil.sessionState = response.session_state
+        log.debug('CALLBACK SESSION STATE', Anvil.sessionState)
+      })
+      // and retrieve user info
+      .then(() => {
+        return Anvil.userInfo().catch(e => {
+          log.debug('userInfo() retrieval failed with', e)
+          throw new Error('Retrieving user info from server failed.')
+        })
+      })
+      .then(userInfo => {
         Anvil.session.userInfo = apiHttp.getData(userInfo)
         Anvil.serialize()
-        deferred.resolve(Anvil.session)
-      },
-
-      function userInfoFailure () {
-        deferred.reject('Retrieving user info from server failed.')
-      }
-    )
+        return Anvil.session
+      })
+      .catch(e => {
+        log.debug('Exception during callback:', e)
+        throw e  // caller can ultimately handle this.
+      })
   }
-
-  return this.apiDefer.deferToPromise(deferred)
 }
 
 Anvil.callback = callback
@@ -544,26 +562,30 @@ function authorize () {
       // This will then cause a login in this window (not the popup) as
       // implemented in the 'message' listener below.
 
-      var deferred = this.apiDefer.defer()
       var popup
 
-      var listener = function listener (event) {
-        if (event.data !== '__ready__') {
-          var fragment = getUrlFragment(event.data)
-          Anvil.callback(parseFormUrlEncoded(fragment))
-          .then(
-            function (result) { deferred.resolve(result) },
-            function (fault) { deferred.reject(fault) }
-          )
-          window.removeEventListener('message', listener, false)
-          if (popup) {
-            popup.close()
+      let authMessageReceived = new Promise(function (resolve, reject) {
+        let listener = function listener (event) {
+          if (event.data !== '__ready__') {
+            var fragment = getUrlFragment(event.data)
+            Anvil.callback(parseFormUrlEncoded(fragment))
+              .then(
+              function (result) {
+                resolve(result)
+              },
+              function (fault) {
+                reject(fault)
+              }
+            )
+            window.removeEventListener('message', listener, false)
+            if (popup) {
+              popup.close()
+            }
           }
         }
-      }
 
-      window.addEventListener('message', listener, false)
-
+        window.addEventListener('message', listener, false)
+      })
       // Some authentication methods will NOT cause a redirect ever!
       //
       // The passwordless login method sends the user a link in an email.
@@ -573,17 +595,23 @@ function authorize () {
       // call Anvil.callback itself.
       // The listener below will react to the case where there is a
       // successful login and then close the popup.
-      Anvil.once('authenticated', function () {
-        if (popup) {
-          popup.close()
-        }
+      let authenticated = new Promise(function (resolve, reject) {
+        Anvil.once('authenticated', function () {
+          resolve()
+          if (popup) {
+            popup.close()
+          }
+        })
       })
-      popup = window.open(this.uri(), 'anvil', Anvil.popup(700, 500))
-      return this.apiDefer.deferToPromise(deferred)
-
-    // navigate the current window to the provider
+      return Anvil.uri().then(uri => {
+        popup = window.open(this.uri(), 'anvil', Anvil.popup(700, 500))
+        return Promise.race([authMessageReceived, authenticated])
+      })
     } else {
-      window.location = this.uri()
+      // navigate the current window to the provider
+      return Anvil.uri().then(uri => {
+        window.location = this.uri()
+      })
     }
   }
 }

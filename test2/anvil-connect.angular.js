@@ -133,8 +133,11 @@ describe('Anvil Connect', function () {
   })
 
   describe('uri with "authorize" endpoint', function () {
-    beforeEach(function () {
-      uri = Anvil.uri()
+    beforeEach(function (done) {
+      Anvil.uri().then( v => {
+        uri = v
+        done()
+      })
     })
 
     it('should contain issuer', function () {
@@ -167,8 +170,11 @@ describe('Anvil Connect', function () {
   })
 
   describe('uri with "signin" endpoint', function () {
-    beforeEach(function () {
-      uri = Anvil.uri('signin')
+    beforeEach(function (done) {
+      Anvil.uri('signin').then( v => {
+        uri = v
+        done()
+      })
     })
 
     it('should contain issuer', function () {
@@ -201,10 +207,12 @@ describe('Anvil Connect', function () {
   })
 
   describe('uri with "signup" endpoint', function () {
-    beforeEach(function () {
-      uri = Anvil.uri('signup')
+    beforeEach(function (done) {
+      Anvil.uri('signup').then( v => {
+        uri = v
+        done()
+      })
     })
-
     it('should contain issuer', function () {
       expect(uri).toContain(config.issuer)
     })
@@ -320,28 +328,42 @@ describe('Anvil Connect', function () {
   })
 
   describe('request', function () {
-    it('should add a bearer token to an HTTP request', function () {
-      uri = config.issuer + '/userinfo'
+    uri = config.issuer + '/userinfo'
+
+    beforeEach(function () {
       Anvil.session.access_token = 'random'
       var headers =
-        {'Authorization': `Bearer ${Anvil.session.access_token}`,
+      {'Authorization': `Bearer ${Anvil.session.access_token}`,
         'Accept': 'application/json, text/plain, */*'}
       $httpBackend.expectGET(uri, headers).respond(200, {})
-      Anvil.request({ method: 'GET', url: uri })
-      $httpBackend.flush()
+    })
+
+    it('should add a bearer token to an HTTP request', function (done) {
+      promise = Anvil.request({ method: 'GET', url: uri })
+      setTimeout(() => {
+        $httpBackend.flush()
+        promise.then(() => {
+          done()
+        })
+      }, 0)
     })
   })
 
   describe('userInfo', function () {
-    it('should request user info from the provider', function () {
+    it('should request user info from the provider', function (done) {
       uri = config.issuer + '/userinfo'
       Anvil.session.access_token = 'random'
       var headers =
         {'Authorization': `Bearer ${Anvil.session.access_token}`,
         'Accept': 'application/json, text/plain, */*'}
       $httpBackend.expectGET(uri, headers).respond(200, {})
-      Anvil.userInfo()
-      $httpBackend.flush()
+      promise = Anvil.userInfo()
+      setTimeout(() => {
+        $httpBackend.flush()
+        promise.then(v => {
+          done()
+        })
+      }, 0)
     })
   })
 
@@ -350,22 +372,44 @@ describe('Anvil Connect', function () {
       localStorage['anvil.connect'] = '{}'
       promise = Anvil.callback({ error: 'invalid' })
     })
+    afterEach(function (done) {
+      promise.catch(() => {
+        // expect errors
+        done()
+      })
+    })
 
     it('should return a promise', function () {
       expect(promise.then).toBeDefined()
     })
 
     it('should clear the session', function () {
-      Anvil.callback({ error: 'invalid' })
       expect(localStorage['anvil.connect']).toBeUndefined()
     })
 
-    it('should reject the promise')
+    it('should reject the promise', function () {
+      promise.catch(err => {
+        expect(err).toBeDefined()
+      })
+    })
   })
 
   describe('callback with authorization response', function () {
-    beforeEach(function () {
+    let session
+    beforeEach(function (done) {
+      uri = config.issuer + '/userinfo'
+      $httpBackend.when('GET', uri).respond({})
+
       promise = Anvil.callback({ access_token: 'eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ' })
+      setTimeout( () => {
+        $httpBackend.flush()
+        promise.then(thesession => {
+          done()
+        }, e => {
+          err = e
+          done()
+        })
+      }, 0)
     })
 
     it('should return a promise', function () {

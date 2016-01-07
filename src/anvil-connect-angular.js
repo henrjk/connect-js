@@ -14,14 +14,6 @@ function init (providerOptions, $http, $q, $location, $window, $document) {
         return response.data
       }
     },
-    deferred: {
-      defer: function () {
-        return $q.defer()
-      },
-      deferToPromise: function (deferred) {
-        return deferred.promise
-      }
-    },
     location: {
       hash: function () {
         return $location.hash()

@@ -16,14 +16,6 @@ export default function init (providerOptions) {
         return response.data
       }
     },
-    deferred: {
-      defer: function () {
-        return Q.defer()
-      },
-      deferToPromise: function (deferred) {
-        return deferred.promise
-      }
-    },
     location: {
       hash: function () {
         return location.hash.substring(1)

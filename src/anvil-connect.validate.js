@@ -1,6 +1,7 @@
 /* eslint-env es6 */
 
 import bows from 'bows'
+import Anvil from './anvil-connect'
 
 'use strict'
 
@@ -67,26 +68,16 @@ Validate.configure = configure
  */
 
 function getKeys () {
-  var deferred = Anvil.apiDefer.defer()
   var apiHttp = Anvil.apiHttp
-
-  function success (response) {
-    Anvil.validate.setJWK(response && apiHttp.getData(response) &&
-      apiHttp.getData(response).keys)
-    deferred.resolve(response)
-  }
-
-  function failure (fault) {
-    deferred.reject(fault)
-  }
-
-  Anvil.request({
+  return Anvil.request({
     method: 'GET',
     url: Anvil.issuer + '/jwks',
     crossDomain: true
-  }).then(success, failure)
-
-  return Anvil.apiDefer.deferToPromise(deferred)
+  }).then(response => {
+    Anvil.validate.setJWK(response && apiHttp.getData(response) &&
+      apiHttp.getData(response).keys)
+    return response
+  })
 }
 
 Validate.getKeys = getKeys
@@ -100,9 +91,7 @@ function prepareValidate () {
   var jwk = setJWK() // reads from local storage
   if (jwk) {
     // this is not doing anything
-    var deferred = Anvil.apiDefer.defer()
-    deferred.resolve()
-    return Anvil.apiDefer.deferToPromise(deferred)
+    return Promise.resolve()
   } else {
     return getKeys()
   }
@@ -115,21 +104,27 @@ Validate.prepareValidate = prepareValidate
  */
 
 function validateAndParseToken (token) {
-  if (!token) {
-    return undefined
-  }
-  var jws = new KJUR.jws.JWS()
-  // Decode the access token and verify signature
-  if (token &&
-    !jws.verifyJWSByNE(token, hN, hE)) {
-    throw new Error('Failed to verify access token signature.')
-  }
-  try {
-    var claims = JSON.parse(jws.parsedJWS.payloadS)
-    return claims
-  } catch (e) {
-    throw e
-  }
+  return new Promise(function (resolve, reject) {
+    if (!token) {
+      resolve(undefined)
+    } else {
+      const jws = new KJUR.jws.JWS()
+      // Decode the access token and verify signature
+      try {
+        if (token && !jws.verifyJWSByNE(token, hN, hE)) {
+          throw new Error('Failed to verify access token signature.')
+        }
+      } catch (e) {
+        reject(e)
+      }
+      try {
+        let claims = JSON.parse(jws.parsedJWS.payloadS)
+        resolve(claims)
+      } catch (e) {
+        reject(e)
+      }
+    }
+  })
 }
 
 Validate.validateAndParseToken = validateAndParseToken

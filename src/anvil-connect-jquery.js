@@ -16,14 +16,6 @@ export default function init (providerOptions) {
         return response
       }
     },
-    deferred: {
-      defer: function () {
-        return jQuery.Deferred()
-      },
-      deferToPromise: function (deferred) {
-        return deferred.promise()
-      }
-    },
     location: {
       hash: function () {
         return location.hash.substring(1)
