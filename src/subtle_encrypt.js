@@ -2,7 +2,7 @@
  * Created by dev on 27/12/15.
  */
 
-import {ab2hex} from './ab_utils'
+import {ab2hex, base64urlstr2ab, ascii2ab} from './ab_utils'
 
 let crypto = window.crypto
 
@@ -75,3 +75,59 @@ export function decrypt ({abKey, abIv, abEncrypted}) {
 export function sha256 (ab) {
   return crypto.subtle.digest('SHA-256', ab)
 }
+
+// jwk is a JWK object not JSON?: toto verify that exportKey would do this
+// as well
+// https://github.com/WebKit/webkit/blob/master/LayoutTests/crypto/subtle/rsassa-pkcs1-v1_5-import-jwk.html
+function importJWK (jwk) {
+  return crypto.subtle.importKey(
+    'jwk', jwk,
+    {name: 'RSASSA-PKCS1-v1_5', hash: {name: 'SHA-256'}},
+    true, // extractable
+    ['verify']
+  )
+}
+
+export function verifyJWT (jwkPublic, token) {
+  return new Promise(function (resolve, reject) {
+    let [theader, tpayload, tsignature, ...rest] = token.split('.')
+    if (rest.length > 0) {
+      reject(`token has ${3 + rest.length} dot '.' separated sections where 3 are expected.`)
+      return
+    }
+    if (tsignature === undefined) {
+      reject('token misses signature')
+      return
+    }
+    if (tpayload === undefined) {
+      reject('token misses payload')
+      return
+    }
+    if (theader === undefined) {
+      reject('token misses header')
+      return
+    }
+    try {
+      let abData = ascii2ab(theader + '.' + tpayload)
+      let abSignature = base64urlstr2ab(tsignature)
+      // todo: this should probably throw if character are not base64plus chars!
+
+      resolve(importJWK(jwkPublic).then(key => {
+        return crypto.subtle.verify(
+          {
+            name: 'RSASSA-PKCS1-v1_5',
+            hash: {
+              name: 'SHA-256'
+            }
+          },
+          key,
+          abSignature,
+          abData
+        )
+      }))
+    } catch (err) {
+      reject(err)
+    }
+  })
+}
+
