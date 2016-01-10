@@ -23,7 +23,6 @@ System.config({
     "capaj/jspm-hot-reloader": "github:capaj/jspm-hot-reloader@0.4.3",
     "core-js": "npm:core-js@1.2.6",
     "jquery": "github:components/jquery@2.1.4",
-    "jwt-decode": "npm:jwt-decode@1.4.0",
     "kriskowal/q": "github:kriskowal/q@2.0.2",
     "q": "npm:q@1.4.1",
     "sjcl": "npm:sjcl@1.0.3",
@@ -262,11 +261,6 @@ System.config({
     },
     "npm:inherits@2.0.1": {
       "util": "github:jspm/nodelibs-util@0.1.0"
-    },
-    "npm:jwt-decode@1.4.0": {
-      "Base64": "npm:Base64@0.1.4",
-      "fs": "github:jspm/nodelibs-fs@0.1.2",
-      "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },
     "npm:lodash._baseassign@3.2.0": {
       "lodash._basecopy": "npm:lodash._basecopy@3.0.1",

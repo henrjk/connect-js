@@ -23,7 +23,7 @@
 
 'use strict'  // ES6 modules are strict but may be safer for transpiling perhaps
 
-import jwt_decode from 'jwt-decode'
+import * as jws from './jws'
 
 /**
  * Provider configuration
@@ -51,7 +51,8 @@ export function validateAndParseToken (token) {
     return p
   } else {
     return p.then(() => {
-      var claims = jwt_decode(token)
+      const t = jws.splitJWS(token)
+      const claims = jws.decodeJWSSegment(t.payload)
       return Promise.resolve(claims)
     })
   }

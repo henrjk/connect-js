@@ -3,7 +3,8 @@
 
 import bows from 'bows'
 import Anvil from './anvil-connect'
-import {decodeJWSSegment, verifyJWT} from './subtle_encrypt'
+import {verifyJWT} from './subtle_encrypt'
+import {decodeJWSSegment} from './jws'
 
 'use strict'
 

@@ -1,6 +1,7 @@
 /* eslint-env jasmine */
 /* eslint-disable quotes */
 import * as se from '../src/subtle_encrypt'
+import * as jws from '../src/jws'
 import {ab2hex, hex2ab, str2ab, ab2str, str2utf8ab, ab2base64urlstr, ascii2ab} from '../src/ab_utils'
 
 describe('Check generateEncryptionKey produces key', () => {
@@ -206,12 +207,12 @@ describe('Check jwk sign verification', () => {
           expect(verifiedToken.header).toBeDefined()
           expect(verifiedToken.payload).toBeDefined()
           {
-            let headerJSON = se.decodeJWSSegment(verifiedToken.header)
+            let headerJSON = jws.decodeJWSSegment(verifiedToken.header)
             expect(Object.keys(headerJSON)).toEqual(['alg'])
             expect(headerJSON.alg).toEqual('RS256')
           }
           {
-            let payloadJSON = se.decodeJWSSegment(verifiedToken.payload)
+            let payloadJSON = jws.decodeJWSSegment(verifiedToken.payload)
             expect(Object.keys(payloadJSON)).toEqual(["jti", "iss", "sub", "aud", "exp", "iat", "scope"])
             expect(payloadJSON.aud).toEqual('58148b70-85aa-4726-af7d-42bd109dcc49')
             expect(payloadJSON.exp).toEqual(1413944758335)
