@@ -20,7 +20,7 @@ module.exports = function (config) {
 
     jspm: {
       config: 'config.js',
-      loadFiles: ['test2/**/*'],
+      loadFiles: ['test/**/*'],
       serveFiles: ['src/*.js'],
       paths: {
       //   'src/*': 'base/src/*',
