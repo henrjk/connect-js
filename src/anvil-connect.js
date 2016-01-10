@@ -363,6 +363,12 @@ function uri (endpoint, options) {
 
 Anvil.uri = uri
 
+function generateNonce () {
+  let bytes = new Uint8Array(10)
+  window.crypto.getRandomValues(bytes)
+  return ab2base64urlstr(bytes).substr(0, 10)
+}
+
 /**
  * Create or verify a nonce
  */
@@ -374,7 +380,7 @@ function nonce (nonce) {
     }
     return Anvil.sha256url(localStorage['nonce']).then(val => val === nonce)
   } else {
-    localStorage['nonce'] = Math.random().toString(36).substr(2, 10)
+    localStorage['nonce'] = generateNonce()
     return Anvil.sha256url(localStorage['nonce'])
   }
 }
