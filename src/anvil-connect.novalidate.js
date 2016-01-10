@@ -25,14 +25,11 @@
 
 import jwt_decode from 'jwt-decode'
 
-let m_anvil
-
 /**
  * Provider configuration
  */
 
 export function configure (anvil, options) {
-  m_anvil = anvil
 }
 
 /*
@@ -49,7 +46,7 @@ export function prepareValidate () {
  */
 
 export function validateAndParseToken (token) {
-  return new Promise( function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     if (!token) {
       resolve(undefined)
     } else {

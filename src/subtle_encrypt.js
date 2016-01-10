@@ -2,7 +2,7 @@
  * Created by dev on 27/12/15.
  */
 
-import {ab2hex, base64urlstr2ab, ascii2ab, abutf82str} from './ab_utils'
+import {base64urlstr2ab, ascii2ab, abutf82str} from './ab_utils'
 
 let crypto = window.crypto
 
@@ -88,7 +88,7 @@ function importJWK (jwk) {
   )
 }
 
-export function decodeJWSSegment(base64url) {
+export function decodeJWSSegment (base64url) {
   const utf8ab = base64urlstr2ab(base64url)
   const str = abutf82str(utf8ab)
   const json = JSON.parse(str)
@@ -136,7 +136,7 @@ export function verifyJWT (jwkPublic, token) {
           }
         }
       )
-      })
+    })
   } catch (err) {
     return Promise.reject(err)
   }

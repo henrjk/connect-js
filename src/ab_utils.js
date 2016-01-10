@@ -1,3 +1,6 @@
+/* eslint-env es6 */
+/* global TextEncoderLite, TextDecoderLite */
+
 import * as base64 from 'base64-js'
 import 'text-encoder-lite'
 // see jsperf.com/hex-conversion
@@ -8,7 +11,7 @@ const hexEncodeArray = hexChars.split('')
 export function ab2hex (ab) {
   let arr = new Uint8Array(ab)
   let s = ''
-  for (var i = 0 ,n = ab.byteLength; i < n; i++) {
+  for (var i = 0, n = ab.byteLength; i < n; i++) {
     const byte = arr[i]
     s += hexEncodeArray[byte >>> 4]
     s += hexEncodeArray[byte & 0x0f]
@@ -35,7 +38,7 @@ export function hex2ab (hexstr) {
 
   let i = 0
   let rest = hexstr
-  while (rest.length > 0 ) {
+  while (rest.length > 0) {
     let [d1, d0, ... newrest] = rest  // rest parameter must not be the same as already existing variable
     // d0 === undefined should be handled by throw above.
     let n = hexdigit(d1) * 16 + hexdigit(d0)
@@ -99,7 +102,7 @@ export function abutf82str (ab) {
 
 export function str2ab (str) {
   const strlen = str.length
-  let buf = new ArrayBuffer(strlen*2)
+  let buf = new ArrayBuffer(strlen * 2)
   let view = new Uint16Array(buf)
   for (var i = 0; i < strlen; i++) {
     view[i] = str.charCodeAt(i)

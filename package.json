@@ -18,7 +18,7 @@
   "scripts": {
     "test": "karma start --single-run --browsers PhantomJS && npm run lint",
     "test_unit": "./node_modules/.bin/mocha --compilers js:babel-core/register -r babel-polyfill test_unit",
-    "lint": "eslint --ignore-path .gitignore . && echo Code looks good!",
+    "lint": "eslint --ignore-path .gitignore src && echo Code looks good!",
     "test-firefox": "karma start --single-run --browsers Firefox",
     "test-chrome": "karma start --single-run --browsers Chrome",
     "test-safari": "karma start --single-run --browsers Safari",

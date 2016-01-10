@@ -99,7 +99,7 @@ export function validateAndParseToken (token) {
       resolve(undefined)
     } else {
       return verifyJWT(jwk, token).then(
-        token =>  {
+        token => {
           resolve(decodeJWSSegment(token.payload))
         }
       )
