@@ -92,17 +92,17 @@ export function prepareValidate () {
 /**
  * Validate tokens
  */
-
 export function validateAndParseToken (token) {
-  return new Promise(function (resolve, reject) {
-    if (!token) {
-      resolve(undefined)
-    } else {
-      return verifyJWT(jwk, token).then(
-        token => {
-          resolve(decodeJWSSegment(token.payload))
-        }
-      )
-    }
-  })
+  const p = Promise.resolve(undefined)
+  if (!token) {
+    return p
+  } else {
+    return p
+      .then(() => {
+        return verifyJWT(jwk, token)
+      })
+      .then(token => {
+        return decodeJWSSegment(token.payload)
+      })
+  }
 }

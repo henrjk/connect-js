@@ -367,23 +367,16 @@ Anvil.uri = uri
  * Create or verify a nonce
  */
 function nonce (nonce) {
-  const p = new Promise(function (resolve, reject) {
-    if (nonce) {
-      var lnonce = localStorage['nonce']
-      if (!lnonce) {
-        return resolve(false)
-      }
-      Anvil.sha256url(localStorage['nonce']).then(val => {
-        resolve(val === nonce)
-      })
-    } else {
-      localStorage['nonce'] = Math.random().toString(36).substr(2, 10)
-      Anvil.sha256url(localStorage['nonce']).then(val => {
-        resolve(val)
-      })
+  if (nonce) {
+    var lnonce = localStorage['nonce']
+    if (!lnonce) {
+      return Promise.resolve(false)
     }
-  })
-  return p
+    return Anvil.sha256url(localStorage['nonce']).then(val => val === nonce)
+  } else {
+    localStorage['nonce'] = Math.random().toString(36).substr(2, 10)
+    return Anvil.sha256url(localStorage['nonce'])
+  }
 }
 
 Anvil.nonce = nonce

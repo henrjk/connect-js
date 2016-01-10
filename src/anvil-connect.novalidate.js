@@ -46,16 +46,13 @@ export function prepareValidate () {
  */
 
 export function validateAndParseToken (token) {
-  return new Promise(function (resolve, reject) {
-    if (!token) {
-      resolve(undefined)
-    } else {
-      try {
-        var claims = jwt_decode(token)
-        resolve(claims)
-      } catch (err) {
-        reject(err)
-      }
-    }
-  })
+  const p = Promise.resolve(undefined)
+  if (!token) {
+    return p
+  } else {
+    return p.then(() => {
+      var claims = jwt_decode(token)
+      return Promise.resolve(claims)
+    })
+  }
 }
