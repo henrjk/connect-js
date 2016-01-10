@@ -150,7 +150,7 @@ export function ab2base64str (buf) {
 
 export function base64urlstr2ab (base64urlstr) {
   // Decode url-safe style base64: https://github.com/beatgammit/base64-js/pull/10
-  // however '=' padding characters must be added...
+  // however '=' padding characters must be added, if needed
   let str = base64urlstr
   let npad = 4 - str.length % 4
   if (npad === 4) {

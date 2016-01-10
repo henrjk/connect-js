@@ -16,7 +16,15 @@ describe('Anvil Connect', function () {
     client_id: 'uuid',
     redirect_uri: 'https://my.app.com',
     scope: ['other'],
-    display: 'popup'}
+    display: 'popup',
+    jwk: {
+      'kty': 'RSA',
+      'use': 'sig',
+      'alg': 'RS256',
+      'n': 'nhubIr98ugQw-6JHq4c5aWGMlFAU-6dXFYewby7A-d4mY_EIY9tujJWUIa0PXGx8e3KAi7vOF81tvUCIdbmlzduLWTy50zcIdBRO6d65020yQg4Mab-lNXedDVMfW2v15uq5PfrQNMSGSaO__ktnCyc4DQcB__cYb1-7yCXnmaGkqfKFamRusevK6HxzHyFTMvCLlGvmADUiuFA_1IVfbLryy5JLTCnsehBMiJ7oRfL8bY4mLuSolLRSORcrtk-p_no4YGb5OVgGbDJd1ZndsGCWeU-MFvrt7FIyJeaL7J54Vrna1YtmU6o1_oJZvZes1_o9YLG3Q1ntXcc86uM6Yw',
+      'e': 'AQAB'
+    }
+    }
 
   beforeEach(module('anvil'))
 
@@ -396,20 +404,30 @@ describe('Anvil Connect', function () {
 
   describe('callback with authorization response', function () {
     let session
+
+    // pretty bad hack but it works.
+    // the flush must happen after the request
+    function flushHttpBackend () {
+      try {
+        $httpBackend.flush()
+      } catch (e) {
+        setTimeout(flushHttpBackend, 0) // try again
+      }
+    }
+
     beforeEach(function (done) {
       uri = config.issuer + '/userinfo'
       $httpBackend.when('GET', uri).respond({})
 
       promise = Anvil.callback({ access_token: 'eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ' })
-      setTimeout( () => {
-        $httpBackend.flush()
-        promise.then(thesession => {
-          done()
-        }, e => {
-          err = e
-          done()
-        })
-      }, 0)
+      setTimeout(flushHttpBackend, 0)
+      promise.then(thesession => {
+        done()
+      }, e => {
+        err = e
+        done()
+      })
+
     })
 
     it('should return a promise', function () {

@@ -1,15 +1,15 @@
 /* eslint-env es6 */
+/* global localStorage */
 
 import bows from 'bows'
 import Anvil from './anvil-connect'
+import {decodeJWSSegment, verifyJWT} from './subtle_encrypt'
 
 'use strict'
 
 var log = bows('Anvil.validate')
 
-var Validate = {}
-
-var jwk, hN, hE
+var jwk
 
 /**
  * Set JWK
@@ -44,24 +44,18 @@ function setJWK (jwks) {
 
   if (jwk) {
     // provider.jwk = jwk
-    hN = b64utohex(jwk.n)
-    hE = b64utohex(jwk.e)
     localStorage[key] = JSON.stringify(jwk)
   }
   return jwk
 }
 
-Validate.setJWK = setJWK
-
 /**
  * Provider configuration
  */
 
-function configure (options) {
+export function configure (anvil, options) {
   setJWK(options.jwk)
 }
-
-Validate.configure = configure
 
 /**
  * Signing Key - only used if validate has setJWK method!
@@ -80,53 +74,35 @@ function getKeys () {
   })
 }
 
-Validate.getKeys = getKeys
-
 /*
  * Prepare validate
  *
  * May retrieve keys if needed. Returns a promise.
  */
-function prepareValidate () {
+export function prepareValidate () {
   var jwk = setJWK() // reads from local storage
   if (jwk) {
-    // return promise even if not async
+    // Return promise also if keys are already in local storage
     return Promise.resolve()
   } else {
     return getKeys()
   }
 }
 
-Validate.prepareValidate = prepareValidate
-
 /**
  * Validate tokens
  */
 
-function validateAndParseToken (token) {
+export function validateAndParseToken (token) {
   return new Promise(function (resolve, reject) {
     if (!token) {
       resolve(undefined)
     } else {
-      const jws = new KJUR.jws.JWS()
-      // Decode the access token and verify signature
-      try {
-        if (token && !jws.verifyJWSByNE(token, hN, hE)) {
-          throw new Error('Failed to verify access token signature.')
+      return verifyJWT(jwk, token).then(
+        token =>  {
+          resolve(decodeJWSSegment(token.payload))
         }
-      } catch (e) {
-        reject(e)
-      }
-      try {
-        let claims = JSON.parse(jws.parsedJWS.payloadS)
-        resolve(claims)
-      } catch (e) {
-        reject(e)
-      }
+      )
     }
   })
 }
-
-Validate.validateAndParseToken = validateAndParseToken
-
-export default Validate

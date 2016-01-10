@@ -61,7 +61,7 @@ function encodeJWSSegment(jsonObject) {
   return b64url
 }
 
-ddescribe('Check jwk sign verification', () => {
+describe('Check jwk sign verification', () => {
   describe('self generated key', () => {
     let result = {}
     let token = {
@@ -142,7 +142,11 @@ ddescribe('Check jwk sign verification', () => {
 
     it('should verify a matching token with key', done => {
       se.verifyJWT(result.jwtPubKey, result.token).then(
-        res => { expect(res).toBeTruthy(); done() },
+        verifiedToken => {
+          expect(verifiedToken.header).toBeDefined()
+          expect(verifiedToken.payload).toBeDefined()
+          done()
+        },
         err => { console.log(err); expect(undefined).toBeTruthy(); done() }
         )
       }
@@ -150,7 +154,7 @@ ddescribe('Check jwk sign verification', () => {
   })
 
   describe('hard coded key', () => {
-    let key2 = {
+    let key = {
       jwk: {
         "kty":"RSA",
         "use":"sig",
@@ -169,7 +173,7 @@ ddescribe('Check jwk sign verification', () => {
     //   let nwithoutZeroes = ab2base64urlstr(hex2ab(
     // //"9e1b9b22bf7cba0430fba247ab873969618c945014fba7571587b06f2ec0f9de2663f10863db6e8c959421ad0f5c6c7c7b72808bbbce17cd6dbd408875b9a5cddb8b593cb9d3370874144ee9deb9d36d32420e0c69bfa535779d0d531f5b6bf5e6eab93dfad034c48649a3bffe4b670b27380d0701fff7186f5fbbc825e799a1a4a9f2856a646eb1ebcae87c731f215332f08b946be6003522b8503fd4855f6cbaf2cb924b4c29ec7a104c889ee845f2fc6d8e262ee4a894b45239172bb64fa9fe7a386066f93958066c325dd599ddb06096794f8c16faedec523225e68bec9e7856b9dad58b6653aa35fe8259bd97acd7fa3d60b1b74359ed5dc73ceae33a63"
     // ))
-    let key2_original = {
+    let key_original = {
       jwk: {
         "kty":"RSA",
         "use":"sig",
@@ -183,19 +187,64 @@ ddescribe('Check jwk sign verification', () => {
 
     console.log('nwithoutZeroes= ', nwithoutZeroes)
 
-    let token2 = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ"
 
-    let token2_firefox = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ"
+    let token = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ"
+    let [header, payload, signature] = token.split('.')
+
+    let token_firefox = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ"
 
     it('should verify a matching hardcoded token with key', done => {
-      se.verifyJWT(key2.jwk, token2).then(
-        res => {
-          expect(res).toBeTruthy();
+      se.verifyJWT(key.jwk, token).then(
+        verifiedToken => {
+          expect(verifiedToken.header).toBeDefined()
+          expect(verifiedToken.payload).toBeDefined()
           done()
         },
         err => {
-          console.log(err);
-          expect(undefined).toBeTruthy();
+          console.log(err)
+          expect(undefined).toBeTruthy()
+          done()
+        }
+      )
+    })
+    it('should provide payload so that we can parse claims', done => {
+      se.verifyJWT(key.jwk, token).then(
+        verifiedToken => {
+          expect(verifiedToken.header).toBeDefined()
+          expect(verifiedToken.payload).toBeDefined()
+          {
+            let headerJSON = se.decodeJWSSegment(verifiedToken.header)
+            expect(Object.keys(headerJSON)).toEqual(['alg'])
+            expect(headerJSON.alg).toEqual('RS256')
+          }
+          {
+            let payloadJSON = se.decodeJWSSegment(verifiedToken.payload)
+            expect(Object.keys(payloadJSON)).toEqual(["jti", "iss", "sub", "aud", "exp", "iat", "scope"])
+            expect(payloadJSON.aud).toEqual('58148b70-85aa-4726-af7d-42bd109dcc49')
+            expect(payloadJSON.exp).toEqual(1413944758335)
+            expect(payloadJSON.iat).toEqual(1413941158335)
+            expect(payloadJSON.iss).toEqual('http://localhost:3000')
+            expect(payloadJSON.jti).toEqual('4535099f6570b90ce19f')
+            expect(payloadJSON.scope).toEqual('openid profile')
+            expect(payloadJSON.sub).toEqual('4076f412-374f-4bc6-909a-1d8eb1aa233c')
+          }
+          done()
+        },
+        err => {
+          console.log(err)
+          done()
+          expect(undefined).toBeTruthy()
+        }
+      )
+    })
+    it('should NOT verify a none matching hardcoded token with key', done => {
+      se.verifyJWT(key.jwk, `${header}.${payload}.${header}`).then(
+        verifiedToken => {
+          expect(undefined).toBeDefined()
+          done()
+        },
+        err => {
+          expect(err).toBeDefined()
           done()
         }
       )

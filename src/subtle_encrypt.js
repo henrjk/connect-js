@@ -2,7 +2,7 @@
  * Created by dev on 27/12/15.
  */
 
-import {ab2hex, base64urlstr2ab, ascii2ab} from './ab_utils'
+import {ab2hex, base64urlstr2ab, ascii2ab, abutf82str} from './ab_utils'
 
 let crypto = window.crypto
 
@@ -88,46 +88,57 @@ function importJWK (jwk) {
   )
 }
 
+export function decodeJWSSegment(base64url) {
+  const utf8ab = base64urlstr2ab(base64url)
+  const str = abutf82str(utf8ab)
+  const json = JSON.parse(str)
+  return json
+}
+
 export function verifyJWT (jwkPublic, token) {
-  return new Promise(function (resolve, reject) {
+  try {
     let [theader, tpayload, tsignature, ...rest] = token.split('.')
     if (rest.length > 0) {
-      reject(`token has ${3 + rest.length} dot '.' separated sections where 3 are expected.`)
-      return
+      throw new Error(`token has ${3 + rest.length} dot '.' separated sections where 3 are expected.`)
     }
     if (tsignature === undefined) {
-      reject('token misses signature')
-      return
+      throw new Error('token misses signature')
     }
     if (tpayload === undefined) {
-      reject('token misses payload')
-      return
+      throw new Error('token misses payload')
     }
     if (theader === undefined) {
-      reject('token misses header')
-      return
+      throw new Error('token misses header')
     }
-    try {
-      let abData = ascii2ab(theader + '.' + tpayload)
-      let abSignature = base64urlstr2ab(tsignature)
-      // todo: this should probably throw if character are not base64plus chars!
+    let abData = ascii2ab(theader + '.' + tpayload)
+    let abSignature = base64urlstr2ab(tsignature)
+    // todo: this should probably throw if character are not base64plus chars!
 
-      resolve(importJWK(jwkPublic).then(key => {
-        return crypto.subtle.verify(
-          {
-            name: 'RSASSA-PKCS1-v1_5',
-            hash: {
-              name: 'SHA-256'
-            }
-          },
-          key,
-          abSignature,
-          abData
-        )
-      }))
-    } catch (err) {
-      reject(err)
-    }
-  })
+    return importJWK(jwkPublic).then(key => {
+      return crypto.subtle.verify(
+        {
+          name: 'RSASSA-PKCS1-v1_5',
+          hash: {
+            name: 'SHA-256'
+          }
+        },
+        key,
+        abSignature,
+        abData
+      ).then(
+        verified => {
+          if (!verified) {
+            throw new Error('Failed to verify token signature.')
+          }
+          return {
+            payload: tpayload,
+            header: theader
+          }
+        }
+      )
+      })
+  } catch (err) {
+    return Promise.reject(err)
+  }
 }
 

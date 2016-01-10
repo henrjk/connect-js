@@ -15,7 +15,7 @@ System.config({
   map: {
     "angular": "github:angular/bower-angular@1.4.8",
     "angular-mocks": "github:angular/bower-angular-mocks@1.4.8",
-    "anvil-connect-jwt-validator": "src/anvil-connect.novalidate",
+    "anvil-connect-jwt-validator": "src/anvil-connect.webcryptovalidate",
     "babel": "npm:babel-core@5.8.34",
     "babel-runtime": "npm:babel-runtime@5.8.34",
     "base64-js": "npm:base64-js@0.0.8",
