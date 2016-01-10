@@ -5,11 +5,8 @@ import {module, inject} from 'angular-mocks'
 import '../src/anvil-connect-angular'
 import sjcl from 'sjcl'
 
-
-'use strict'
-
 describe('Anvil Connect', function () {
-  var {Anvil, AnvilProvider, uri, nonce, $httpBackend, promise} = {}
+  var {Anvil, AnvilProvider, uri, $httpBackend, promise} = {}
 
   var config =
     {issuer: 'https://accounts.anvil.io',
@@ -142,7 +139,7 @@ describe('Anvil Connect', function () {
 
   describe('uri with "authorize" endpoint', function () {
     beforeEach(function (done) {
-      Anvil.uri().then( v => {
+      Anvil.uri().then(v => {
         uri = v
         done()
       })
@@ -179,7 +176,7 @@ describe('Anvil Connect', function () {
 
   describe('uri with "signin" endpoint', function () {
     beforeEach(function (done) {
-      Anvil.uri('signin').then( v => {
+      Anvil.uri('signin').then(v => {
         uri = v
         done()
       })
@@ -216,7 +213,7 @@ describe('Anvil Connect', function () {
 
   describe('uri with "signup" endpoint', function () {
     beforeEach(function (done) {
-      Anvil.uri('signup').then( v => {
+      Anvil.uri('signup').then(v => {
         uri = v
         done()
       })
@@ -293,14 +290,14 @@ describe('Anvil Connect', function () {
     })
 
     it('should verify an argument matching a hash of the value in localStorage', function (done) {
-      Anvil.nonce(result.nonce).then( val => {
+      Anvil.nonce(result.nonce).then(val => {
         expect(val).toBe(true)
         done()
       })
     })
 
     it('should not verify a mismatching argument', function (done) {
-      Anvil.nonce('WRONG').then( val => {
+      Anvil.nonce('WRONG').then(val => {
         expect(val).toBe(false)
         done()
       })
@@ -368,7 +365,7 @@ describe('Anvil Connect', function () {
       promise = Anvil.userInfo()
       setTimeout(() => {
         $httpBackend.flush()
-        promise.then(v => {
+        promise.then(() => {
           done()
         })
       }, 0)
@@ -403,8 +400,7 @@ describe('Anvil Connect', function () {
   })
 
   describe('callback with authorization response', function () {
-    let session
-
+    let result = {}
     // pretty bad hack but it works.
     // the flush must happen after the request
     function flushHttpBackend () {
@@ -421,13 +417,13 @@ describe('Anvil Connect', function () {
 
       promise = Anvil.callback({ access_token: 'eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ' })
       setTimeout(flushHttpBackend, 0)
-      promise.then(thesession => {
+      promise.then(s => {
+        result.session = s
         done()
       }, e => {
-        err = e
+        result.err = e
         done()
       })
-
     })
 
     it('should return a promise', function () {
