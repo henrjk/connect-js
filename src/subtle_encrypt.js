@@ -2,6 +2,7 @@
  * Created by dev on 27/12/15.
  */
 
+import 'webcrypto-shim'
 import {base64urlstr2ab, ascii2ab} from './ab_utils'
 import {splitJWS} from './jws'
 

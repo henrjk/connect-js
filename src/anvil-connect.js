@@ -3,6 +3,7 @@
 
 'use strict'  // ES6 modules are strict but may be safer for transpiling perhaps
 
+import 'webcrypto-shim'
 import bows from 'bows'
 import TinyEmitter from 'tiny-emitter'
 import * as jwtvalidator from 'anvil-connect-jwt-validator'

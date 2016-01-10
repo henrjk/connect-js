@@ -57,6 +57,9 @@ function encodeJWSSegment (jsonObject) {
 
 describe('Check jwk sign verification', () => {
   describe('self generated key', () => {
+    // Signing failed for me on Safari 9.0.2 on OS-X
+    // https://github.com/vibornoff/webcrypto-shim master from 1/10/2016
+    // all other tests pass however.
     let result = {}
     let token = {
       header: {

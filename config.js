@@ -28,6 +28,8 @@ System.config({
     "sjcl": "npm:sjcl@1.0.3",
     "text-encoder-lite": "npm:text-encoder-lite@1.0.0",
     "tiny-emitter": "npm:tiny-emitter@1.0.1",
+    "vibornoff/webcrypto-shim": "github:vibornoff/webcrypto-shim@master",
+    "webcrypto-shim": "github:vibornoff/webcrypto-shim@master",
     "github:angular/bower-angular-mocks@1.4.8": {
       "angular": "github:angular/bower-angular@1.4.8"
     },

@@ -90,7 +90,9 @@
       "q": "npm:q@^1.4.1",
       "sjcl": "npm:sjcl@^1.0.3",
       "text-encoder-lite": "npm:text-encoder-lite@^1.0.0",
-      "tiny-emitter": "npm:tiny-emitter@^1.0.1"
+      "tiny-emitter": "npm:tiny-emitter@^1.0.1",
+      "vibornoff/webcrypto-shim": "master",
+      "webcrypto-shim": "vibornoff/webcrypto-shim@master"
     },
     "devDependencies": {
       "angular-mocks": "angular/bower-angular-mocks@^1.4.8",
