@@ -1,7 +1,3 @@
-/**
- * Created by dev on 27/12/15.
- */
-
 import 'webcrypto-shim'
 import bows from 'bows'
 import {base64urlstr2ab, ascii2ab} from './ab_utils'
@@ -81,7 +77,7 @@ export function sha256 (ab) {
   return crypto.subtle.digest('SHA-256', ab)
 }
 
-// jwk is a JWK object not JSON?: toto verify that exportKey would do this
+// jwk is a JWK object not JSON
 // as well
 // https://github.com/WebKit/webkit/blob/master/LayoutTests/crypto/subtle/rsassa-pkcs1-v1_5-import-jwk.html
 function importJWK (jwk) {
@@ -98,7 +94,6 @@ export function verifyJWT (jwkPublic, token) {
     const jws = segments(token)
     let abData = ascii2ab(jws.header + '.' + jws.payload)
     let abSignature = base64urlstr2ab(jws.signature)
-    // todo: this should probably throw if character are not base64plus chars!
 
     return importJWK(jwkPublic).then(key => {
       return crypto.subtle.verify(
