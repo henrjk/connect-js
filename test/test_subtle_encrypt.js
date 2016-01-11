@@ -3,6 +3,11 @@
 import * as se from '../src/subtle_encrypt'
 import * as jws from '../src/jws'
 import {ab2hex, hex2ab, str2ab, ab2str, str2utf8ab, ab2base64urlstr, ascii2ab} from '../src/ab_utils'
+import bows from 'bows'
+
+const log = bows('Anvil Test')
+
+// localStorage.debug = true triggers log statements
 
 describe('Check generateEncryptionKey produces key', () => {
   let result = {}
@@ -93,22 +98,22 @@ describe('Check jwk sign verification', () => {
         true,  // extractable refers to the private key. public key is always extractable.
         ['sign', 'verify']
       ).then(k => {
-        console.log('generated key:', k)
+        log.debug('generated key:', k)
         result.ppkey = k
         return wcs.exportKey(
           'jwk',
           k.publicKey)
           .then(
             pubKey => { result.jwtPubKey = pubKey },
-            err => console.log('Gen or export public key failed:', err, err.stack)
+            err => log.debug('Gen or export public key failed:', err, err.stack)
           ).then(wcs.exportKey('jwk', k.privateKey)
           ).then(
             privKey => { result.jwtPrivKey = privKey },
-            err => console.log('Gen or export private key failed:', err, err.stack)
+            err => log.debug('Gen or export private key failed:', err, err.stack)
           )
       }).then(() => {
-        console.log('Exported public key:', result.jwtPubKey)
-        console.log('Exported private key:', result.jwtPrivKey)
+        log.debug('Exported public key:', result.jwtPubKey)
+        log.debug('Exported private key:', result.jwtPrivKey)
       }).then(() => {
         const tokenParts = encodedToken.header + '.' + encodedToken.payload
 
@@ -120,32 +125,39 @@ describe('Check jwk sign verification', () => {
           ascii2ab(tokenParts))
           .then(signature => {
             result.signature = ab2base64urlstr(signature)
-            console.log('signature= ', result.signature)
+            log.debug('signature= ', result.signature)
             result.token = `${encodedToken.header}.${encodedToken.payload}.${result.signature}`
-            console.log(`jws= ${result.token}`)
+            log.debug(`jws= ${result.token}`)
             return result.token
           })
       }).then(token => {
         return se.verifyJWT(result.jwtPubKey, token).then(res => {
-          console.log('se.verifyJWT fulfilled', res)
+          log.debug('se.verifyJWT fulfilled', res)
         })
       }).catch(err => {
-        console.log('se.verifyJWT:', err, err.stack)
-        done()
+        log.error('se.verifyJWT caught err:', err, err.stack)
+        // subsequent then calls done in this case.
       }).then(() => {
+        log('calling beforeEach done /2/')
         done()
       })
     })
 
     it('should verify a matching token with key', done => {
+      log('it calling se.verifyJWT', result)
       se.verifyJWT(result.jwtPubKey, result.token).then(
         verifiedToken => {
           expect(verifiedToken.header).toBeDefined()
           expect(verifiedToken.payload).toBeDefined()
           done()
         },
-        err => { console.log(err); expect(undefined).toBeTruthy(); done() }
-        )
+        err => {
+          log.error('it handling err', err)
+          expect(err).toBeNull()
+          log.error('it calling done()')
+          done()
+        }
+      )
     })
   })
 
@@ -183,7 +195,7 @@ describe('Check jwk sign verification', () => {
     let nwithoutZeroes = ab2base64urlstr(hex2ab("9e1b9b22bf7cba0430fba247ab873969618c945014fba7571587b06f2ec0f9de2663f10863db6e8c959421ad0f5c6c7c7b72808bbbce17cd6dbd408875b9a5cddb8b593cb9d3370874144ee9deb9d36d32420e0c69bfa535779d0d531f5b6bf5e6eab93dfad034c48649a3bffe4b670b27380d0701fff7186f5fbbc825e799a1a4a9f2856a646eb1ebcae87c731f215332f08b946be6003522b8503fd4855f6cbaf2cb924b4c29ec7a104c889ee845f2fc6d8e262ee4a894b45239172bb64fa9fe7a386066f93958066c325dd599ddb06096794f8c16faedec523225e68bec9e7856b9dad58b6653aa35fe8259bd97acd7fa3d60b1b74359ed5dc73ceae33a63"
     ))
 
-    console.log('nwithoutZeroes= ', nwithoutZeroes)
+    log.debug('nwithoutZeroes= ', nwithoutZeroes)
 
     let token = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ"
     let [header, payload, signature] = token.split('.')
@@ -198,7 +210,7 @@ describe('Check jwk sign verification', () => {
           done()
         },
         err => {
-          console.log(err)
+          log.debug(err)
           expect(undefined).toBeTruthy()
           done()
         }
@@ -228,7 +240,7 @@ describe('Check jwk sign verification', () => {
           done()
         },
         err => {
-          console.log(err)
+          log.debug(err)
           done()
           expect(undefined).toBeTruthy()
         }
