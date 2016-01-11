@@ -186,7 +186,7 @@ describe('Check jwk sign verification', () => {
     console.log('nwithoutZeroes= ', nwithoutZeroes)
 
     let token = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ"
-    let [header, payload] = token.split('.')
+    let [header, payload, signature] = token.split('.')
 
     // let token_firefox = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ"
 
@@ -210,12 +210,12 @@ describe('Check jwk sign verification', () => {
           expect(verifiedToken.header).toBeDefined()
           expect(verifiedToken.payload).toBeDefined()
           {
-            let headerJSON = jws.decodeJWSSegment(verifiedToken.header)
+            let headerJSON = jws.decodeSegment(verifiedToken.header)
             expect(Object.keys(headerJSON)).toEqual(['alg'])
             expect(headerJSON.alg).toEqual('RS256')
           }
           {
-            let payloadJSON = jws.decodeJWSSegment(verifiedToken.payload)
+            let payloadJSON = jws.decodeSegment(verifiedToken.payload)
             expect(Object.keys(payloadJSON)).toEqual(["jti", "iss", "sub", "aud", "exp", "iat", "scope"])
             expect(payloadJSON.aud).toEqual('58148b70-85aa-4726-af7d-42bd109dcc49')
             expect(payloadJSON.exp).toEqual(1413944758335)
@@ -237,6 +237,20 @@ describe('Check jwk sign verification', () => {
     it('should NOT verify a none matching hardcoded token with key', done => {
       se.verifyJWT(key.jwk, `${header}.${payload}.${header}`).then(
         verifiedToken => {
+          expect(undefined).toBeDefined()
+          done()
+        },
+        err => {
+          expect(err).toBeDefined()
+          done()
+        }
+      )
+    })
+    // https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
+    it('should NOT verify a token with a substituted alg: none header', done => {
+      let algNoneHeader = encodeJWSSegment({"alg": "none"})
+      se.verifyJWT(key.jwk, `${algNoneHeader}.${payload}.${signature}`).then(
+        () => {
           expect(undefined).toBeDefined()
           done()
         },

@@ -1,13 +1,13 @@
 import {base64urlstr2ab, abutf82str} from './ab_utils'
 
-export function decodeJWSSegment (base64url) {
+export function decodeSegment (base64url) {
   const utf8ab = base64urlstr2ab(base64url)
   const str = abutf82str(utf8ab)
   const json = JSON.parse(str)
   return json
 }
 
-export function splitJWS (token) {
+export function segments (token) {
   let tarr = token.split('.')
   let [theader, tpayload, tsignature, ...rest] = tarr
   if (rest.length > 0) {

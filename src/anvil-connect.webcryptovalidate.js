@@ -4,7 +4,7 @@
 import bows from 'bows'
 import Anvil from './anvil-connect'
 import {verifyJWT} from './subtle_encrypt'
-import {decodeJWSSegment} from './jws'
+import {decodeSegment} from './jws'
 
 'use strict'
 
@@ -103,7 +103,7 @@ export function validateAndParseToken (token) {
         return verifyJWT(jwk, token)
       })
       .then(token => {
-        return decodeJWSSegment(token.payload)
+        return decodeSegment(token.payload)
       })
   }
 }

@@ -51,8 +51,8 @@ export function validateAndParseToken (token) {
     return p
   } else {
     return p.then(() => {
-      const t = jws.splitJWS(token)
-      const claims = jws.decodeJWSSegment(t.payload)
+      const t = jws.segments(token)
+      const claims = jws.decodeSegment(t.payload)
       return Promise.resolve(claims)
     })
   }

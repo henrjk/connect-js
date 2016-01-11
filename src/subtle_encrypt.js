@@ -4,7 +4,7 @@
 
 import 'webcrypto-shim'
 import {base64urlstr2ab, ascii2ab} from './ab_utils'
-import {splitJWS} from './jws'
+import {segments} from './jws'
 
 let crypto = window.crypto
 
@@ -92,7 +92,7 @@ function importJWK (jwk) {
 
 export function verifyJWT (jwkPublic, token) {
   try {
-    const jws = splitJWS(token)
+    const jws = segments(token)
     let abData = ascii2ab(jws.header + '.' + jws.payload)
     let abSignature = base64urlstr2ab(jws.signature)
     // todo: this should probably throw if character are not base64plus chars!
