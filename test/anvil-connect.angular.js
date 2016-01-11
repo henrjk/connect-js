@@ -3,7 +3,6 @@
 
 import {module, inject} from 'angular-mocks'
 import '../src/anvil-connect-angular'
-import sjcl from 'sjcl'
 
 describe('Anvil Connect', function () {
   var {Anvil, AnvilProvider, uri, $httpBackend, promise} = {}
@@ -318,9 +317,13 @@ describe('Anvil Connect', function () {
       })
     })
     it('should base64url encode the SHA 256 hash of a provided string', () => {
-      let oldresult = sjcl.codec.base64url.fromBits(sjcl.hash.sha256.hash(input))
-      expect(oldresult).toEqual('n4bQgYhMfWWaL-qgxVrQFaO_TxsrC4Is0V1sFbDwCgg')
-      expect(result.sha256url).toEqual(oldresult)
+      // the lines below worked when sjcl was included, however this dragged in
+      // a bunch of crypto dependencies from browserify.
+      // config.js had this:     "sjcl": "npm:sjcl@1.0.3",
+
+      // let oldresult = sjcl.codec.base64url.fromBits(sjcl.hash.sha256.hash(input))
+      // expect(oldresult).toEqual('n4bQgYhMfWWaL-qgxVrQFaO_TxsrC4Is0V1sFbDwCgg')
+      // expect(result.sha256url).toEqual(oldresult)
       expect(result.sha256url).toEqual('n4bQgYhMfWWaL-qgxVrQFaO_TxsrC4Is0V1sFbDwCgg')
     })
   })
