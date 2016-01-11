@@ -19,13 +19,17 @@
     "test": "karma start --single-run --browsers PhantomJS && npm run lint",
     "test_unit": "./node_modules/.bin/mocha --compilers js:babel-core/register -r babel-polyfill test_unit",
     "lint-src": "eslint --ignore-path .gitignore src && echo Source code looks good!",
-    "lint": "eslint --ignore-path .gitignore src test && echo Code looks good!",
-    "lint-test": "eslint --ignore-path .gitignore test && echo Test code looks good!",
+    "lint": "eslint --ignore-path .gitignore src test test.extended && echo Code looks good!",
+    "lint-test": "eslint --ignore-path .gitignore test test.extended && echo Test code looks good!",
     "test-firefox": "karma start --single-run --browsers Firefox",
     "test-chrome": "karma start --single-run --browsers Chrome",
+    "test-extended-chrome": "karma start karma.conf.extended.js --single-run --browsers Chrome",
     "test-safari": "karma start --single-run --browsers Safari",
-    "test-all": "karma start --single-run --browsers PhantomJS,Firefox,Chrome",
-    "test-all-travis": "karma start --single-run --browsers PhantomJS,Firefox,ChromeOnTravis"
+    "test-all": "karma start --single-run --browsers Safari,Firefox,Chrome",
+    "test-all-travis": "karma start --single-run --browsers Safari,Firefox,ChromeOnTravis",
+    "karma-browsers": "karma start --browsers Safari,Firefox,Chrome",
+    "karma-browsers-extended": "karma start karma.conf.extended.js --browsers Safari,Firefox,Chrome",
+    "karma-run": "karma run"
   },
   "repository": {
     "type": "git",
