@@ -2,7 +2,9 @@
 /* eslint-disable quotes */
 import * as se from '../src/subtle_encrypt'
 import * as jws from '../src/jws'
-import {ab2hex, hex2ab, str2ab, ab2str, ab2base64urlstr} from '../src/ab_utils'
+import {ab2hex, hex2ab, str2ab, ab2str,
+  ab2base64urlstr, base64urlstr2ab} from '../src/ab_utils'
+
 import {encodeJWSSegment} from './tlib'
 import bows from 'bows'
 
@@ -65,6 +67,7 @@ describe('Check jwk sign verification', () => {
         "e": "AQAB"
       }
     }
+
     // NOTE: This is the original key copied from a prior test
     // This seems to be in conflict with Chrome see this issue:
     // https://github.com/OADA/rsa-pem-to-jwk/issues/1
@@ -75,7 +78,6 @@ describe('Check jwk sign verification', () => {
     //   let nwithoutZeroes = ab2base64urlstr(hex2ab(
     // //"9e1b9b22bf7cba0430fba247ab873969618c945014fba7571587b06f2ec0f9de2663f10863db6e8c959421ad0f5c6c7c7b72808bbbce17cd6dbd408875b9a5cddb8b593cb9d3370874144ee9deb9d36d32420e0c69bfa535779d0d531f5b6bf5e6eab93dfad034c48649a3bffe4b670b27380d0701fff7186f5fbbc825e799a1a4a9f2856a646eb1ebcae87c731f215332f08b946be6003522b8503fd4855f6cbaf2cb924b4c29ec7a104c889ee845f2fc6d8e262ee4a894b45239172bb64fa9fe7a386066f93958066c325dd599ddb06096794f8c16faedec523225e68bec9e7856b9dad58b6653aa35fe8259bd97acd7fa3d60b1b74359ed5dc73ceae33a63"
     // ))
-    /*
     let key_original = {
       jwk: {
         "kty": "RSA",
@@ -85,7 +87,9 @@ describe('Check jwk sign verification', () => {
         "e": "AQAB"
       }
     }
-    */
+    let original_n = ab2hex(base64urlstr2ab(key_original.jwk.n))
+    log(`original n in hex: "${original_n}"`)
+
     let nwithoutZeroes = ab2base64urlstr(hex2ab("9e1b9b22bf7cba0430fba247ab873969618c945014fba7571587b06f2ec0f9de2663f10863db6e8c959421ad0f5c6c7c7b72808bbbce17cd6dbd408875b9a5cddb8b593cb9d3370874144ee9deb9d36d32420e0c69bfa535779d0d531f5b6bf5e6eab93dfad034c48649a3bffe4b670b27380d0701fff7186f5fbbc825e799a1a4a9f2856a646eb1ebcae87c731f215332f08b946be6003522b8503fd4855f6cbaf2cb924b4c29ec7a104c889ee845f2fc6d8e262ee4a894b45239172bb64fa9fe7a386066f93958066c325dd599ddb06096794f8c16faedec523225e68bec9e7856b9dad58b6653aa35fe8259bd97acd7fa3d60b1b74359ed5dc73ceae33a63"
     ))
 
