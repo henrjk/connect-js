@@ -26,7 +26,7 @@
 import * as jws from './jws'
 
 /**
- * Provider configuration
+ * JWKs  configuration
  */
 
 export function configure (anvil, options) {
