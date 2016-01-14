@@ -89,10 +89,9 @@ function omit (obj, ...keysToOmit) {
 // as well
 // https://github.com/WebKit/webkit/blob/master/LayoutTests/crypto/subtle/rsassa-pkcs1-v1_5-import-jwk.html
 function importJWK (jwk) {
-  let use = jwk.use
   // needed for Edge 13.10586.0 (Windows 10 0.0.0) todo: file issue to see whether this is a bug in edge!
   // https://connect.microsoft.com/IE/feedbackdetail/view/2242108/webcryptoapi-importing-jwk-with-use-field-fails
-  let effective_jwk = omit(jwk, 'use') //had added {key_ops: ['verify'], ext: true})
+  let effective_jwk = omit(jwk, 'use') // had added {key_ops: ['verify'], ext: true})
   if (jwk.use && jwk.use !== 'sig') {
     return Promise.reject(new Error(`Expected jwk.use to be 'sig' but it is '${jwk.use}'`))
   }
