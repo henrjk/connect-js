@@ -1,10 +1,20 @@
 # Implementation notes about this code
 
-## WebCrypto status:
+## WebCrypto
+
+### Issues found:
+
+[WebCryptoAPI: importing jwk with use field fails | Microsoft Connect](https://connect.microsoft.com/IE/feedbackdetail/view/2242108/webcryptoapi-importing-jwk-with-use-field-fails)
+
+### Status
+
+* [diafygi/webcrypto-examples](https://github.com/diafygi/webcrypto-examples/)
 
 * [W3C Web Cryptography Wiki](https://www.w3.org/2012/webcrypto/wiki/Main_Page)
 
 * IE 11 and Edge: [Developer Resources : Microsoft Edge Dev](https://dev.windows.com/en-us/microsoft-edge/platform/status/webcryptoapi)
+
+  * Bugs for Edge IE via https://connect.microsoft.com/IE/feedbackdetail/view/2242108/webcryptoapi-importing-jwk-with-use-field-fails
 
 * [Bug 122679 – \[Meta\] Implement WebCrypto SubtleCrypto interface](https://bugs.webkit.org/show_bug.cgi?id=122679)
 
@@ -12,10 +22,25 @@
 
 * Chrome: [Issue 245025 - chromium - Implement WebCrypto - An open-source project to help move the web forward. - Google Project Hosting](https://code.google.com/p/chromium/issues/detail?id=245025#c280)
 
+
 * Firefox:
   * [865789 – (web-crypto) Implement W3C Web Crypto API](https://bugzilla.mozilla.org/show_bug.cgi?id=865789)
 
   * [WebCrypto Feature Matrix - Google Sheets](https://docs.google.com/spreadsheets/d/1IcevZuPg-_7Lfoi_I_55Gs8ToHjVcW-Lopo7uvqoJFU/edit#gid=1)
+
+### Standard error codes
+http://www.w3.org/TR/WebCryptoAPI/#dfn-DataError
+see also [WebIDL Level 1](https://www.w3.org/TR/WebIDL-1/)
+
+
+### Chrome implementation pointers
+
+* [Prefer Secure Origins For Powerful New Features - The Chromium Projects](https://www.chromium.org/Home/chromium-security/prefer-secure-origins-for-powerful-new-features)
+
+* [content/child/webcrypto/jwk.cc - chromium/src - Git at Google](https://chromium.googlesource.com/chromium/src/+/063854ec9dca4c3a460812c3eddf54eb7f9588dd/content/child/webcrypto/jwk.cc)
+* [webcrypto/ - Code Search](https://code.google.com/p/chromium/codesearch#chromium/src/components/webcrypto/&sq=package:chromium&type=cs)
+
+
 
 ## JavaScript and UTF-8
 
