@@ -77,12 +77,27 @@ export function sha256 (ab) {
   return crypto.subtle.digest('SHA-256', ab)
 }
 
+function omit (obj, ...keysToOmit) {
+  const toOmit = new Set(keysToOmit)
+  return Object.keys(obj).reduce((a, key) => {
+    if (!toOmit.has(key)) a[key] = obj[key]
+    return a
+  }, {})
+}
+
 // jwk is a JWK object not JSON
 // as well
 // https://github.com/WebKit/webkit/blob/master/LayoutTests/crypto/subtle/rsassa-pkcs1-v1_5-import-jwk.html
 function importJWK (jwk) {
+  let use = jwk.use
+  // needed for Edge 13.10586.0 (Windows 10 0.0.0) todo: file issue to see whether this is a bug in edge!
+  // https://connect.microsoft.com/IE/feedbackdetail/view/2242108/webcryptoapi-importing-jwk-with-use-field-fails
+  let effective_jwk = omit(jwk, 'use') //had added {key_ops: ['verify'], ext: true})
+  if (jwk.use && jwk.use !== 'sig') {
+    return Promise.reject(new Error(`Expected jwk.use to be 'sig' but it is '${jwk.use}'`))
+  }
   return crypto.subtle.importKey(
-    'jwk', jwk,
+    'jwk', effective_jwk,
     {name: 'RSASSA-PKCS1-v1_5', hash: {name: 'SHA-256'}},
     true, // extractable
     ['verify']
@@ -95,26 +110,32 @@ export function verifyJWT (jwkPublic, token) {
     let abData = ascii2ab(jws.header + '.' + jws.payload)
     let abSignature = base64urlstr2ab(jws.signature)
 
-    return importJWK(jwkPublic).then(key => {
-      return crypto.subtle.verify(
-        {
-          name: 'RSASSA-PKCS1-v1_5',
-          hash: {
-            name: 'SHA-256'
+    return importJWK(jwkPublic).then(
+      key => {
+        return crypto.subtle.verify(
+          {
+            name: 'RSASSA-PKCS1-v1_5',
+            hash: {
+              name: 'SHA-256'
+            }
+          },
+          key,
+          abSignature,
+          abData
+        ).then(
+          verified => {
+            if (!verified) {
+              throw new Error('Failed to verify token signature.')
+            }
+            return jws
           }
-        },
-        key,
-        abSignature,
-        abData
-      ).then(
-        verified => {
-          if (!verified) {
-            throw new Error('Failed to verify token signature.')
-          }
-          return jws
-        }
-      )
-    })
+        )
+      },
+      err => {
+        log('importJWK failed:', err.toString())
+        throw err
+      }
+    )
   } catch (err) {
     log('verifyJWT rejected with err=', err, err.stack)
     return Promise.reject(err)
