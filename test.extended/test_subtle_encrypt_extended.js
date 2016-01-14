@@ -68,7 +68,8 @@ describe('Check jwk sign verification', () => {
 
         return wcs.sign(
           {
-            name: 'RSASSA-PKCS1-v1_5'
+            name: 'RSASSA-PKCS1-v1_5',
+            hash: {name: 'SHA-256'}
           },
           result.ppkey.privateKey,
           ascii2ab(tokenParts))
