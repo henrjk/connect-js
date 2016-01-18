@@ -9,6 +9,7 @@
 - [x] Look at todos in code base
 - [x] Add unit test so that token with alg: none will not be a security issue
 - [ ] Automatic fallback to use no-validate when enabled cases.
+      Perhaps allow for server validation?
 - [ ] Wait for jspm 0.17
 - [x] Check about the server key incompatibility
 - [x] Test MS browsers. This will require installing node on win or use a

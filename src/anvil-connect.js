@@ -4,7 +4,8 @@
 import 'webcrypto-shim'
 import bows from 'bows'
 import TinyEmitter from 'tiny-emitter'
-import * as jwtvalidator from 'anvil-connect-jwt-validator'
+import * as jwtvalidator from './anvil-connect.webcryptovalidate'
+// todo: remove when done: used to use jspm here..'anvil-connect-jwt-validator'
 import * as subtle_crypt from './subtle_encrypt'
 import {
   ab2hex,
@@ -326,7 +327,7 @@ function deserialize () {
     Anvil.sessionState = localStorage['anvil.connect.session.state']
     return session
   }).catch(e => {
-    log.debug('Cannot deserialize session data', e, e.stack)
+    log.debug('Cannot deserialize session data', e)
     Anvil.session = session = parsed || {}
     Anvil.sessionState = localStorage['anvil.connect.session.state']
   })
