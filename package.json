@@ -15,6 +15,9 @@
     }
   ],
   "main": "anvil-connect.js",
+  "directories": {
+    "lib": "src"
+  },
   "scripts": {
     "test": "karma start --single-run --browsers Chrome && npm run lint",
     "test_unit": "./node_modules/.bin/mocha --compilers js:babel-core/register -r babel-polyfill test_unit",
