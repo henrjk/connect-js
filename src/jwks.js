@@ -67,7 +67,7 @@ function getKeys () {
     url: Anvil.issuer + '/jwks',
     crossDomain: true
   }).then(response => {
-    Anvil.validate.setJWK(response && apiHttp.getData(response) &&
+    setJWK(response && apiHttp.getData(response) &&
       apiHttp.getData(response).keys)
     return response
   })

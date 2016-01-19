@@ -3,6 +3,9 @@
 import * as jwks from './jwks'
 import {verifyJWT} from './subtle_encrypt'
 import {decodeSegment} from './jws'
+import bows from 'bows'
+
+const log = bows('webcryptovalidate')
 
 /**
  * JWKs configuration
@@ -28,11 +31,13 @@ export function validateAndParseToken (token) {
   if (!token) {
     return p
   } else {
+    log.debug('validateAndParseToken(): entering with token:', token)
     return p
       .then(() => {
         return verifyJWT(jwks.jwk, token)
       })
       .then(token => {
+        log.debug('validateAndParseToken() token verified, now decoding:', token)
         return decodeSegment(token.payload)
       })
   }

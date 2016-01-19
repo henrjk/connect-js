@@ -135,23 +135,14 @@ function init (providerOptions, apis) {
 
   Anvil.initDOMAccess(apis.dom)
 
+  // todo: perhaps this should be in its own method
   apis.dom.getWindow().addEventListener('storage', Anvil.updateSession, true)
-
-  /**
-   * Reinstate an existing session
-   */
-
-  Anvil.deserialize().then(
-    v => v,
-    e => {
-      log.debug('Ignore promise rejection of session deserialize')
-    })
 }
 
 Anvil.init = init
 
 /**
- * Do initializations which require network calls.
+ * Do initializations which may require network calls.
  *
  * returns a promise.
  */
@@ -263,11 +254,11 @@ function secrets2str ({abIv, abKey}) {
 
 function str2secrets (str) {
   const pair = str.split('.')
-  if (pair.length) {
+  if (pair.length !== 2) {
     throw new Error('Expected format of string is <base64>.<base64>')
   }
   const abs = pair.map(base64str2ab)
-  return abs
+  return {abIv: abs[0], abKey: abs[1]}
 }
 
 /**
@@ -275,6 +266,7 @@ function str2secrets (str) {
  */
 
 function serialize () {
+  log.debug('serialize(): entering')
   let plaintext = JSON.stringify(Anvil.session)
   return subtle_crypt.genKeyAndEncrypt(str2ab(plaintext))
   .then(({abIv, abKey, abEncrypted}) => {
@@ -289,9 +281,14 @@ function serialize () {
     this.domAccess.getDocument().cookie = 'anvil.connect=' + secret +
       '; expires=' + now.toUTCString()
 
+    log.debug('serialize() stored secret in COOKIE anvil.connect')
     localStorage['anvil.connect'] = encrypted
+    log.debug('serialize() stored encrypted session data in local storage anvil.connect')
     localStorage['anvil.connect.session.state'] = Anvil.sessionState
-    log.debug('SERIALIZED', encrypted)
+    log.debug('serialize() stored sessionState data in local storage anvil.connect.session.state')
+  }).catch(err => {
+    log.debug('serialize failed with error:', err, err.stack)
+    throw err
   })
 }
 
@@ -312,11 +309,12 @@ function deserialize () {
     const secret = dom.cookie.match(re).pop()
     const secrets = str2secrets(secret)
     const encrypted = base64str2ab(localStorage['anvil.connect'])
-    resolve([secrets[0], secrets[1], encrypted])
+    let parms = Object.assign({}, secrets, {abEncrypted: encrypted})
+    resolve(parms)
   })
 
-  return p.then(r => {
-    return subtle_crypt.decrypt(r[1], r[0], r[2]).then(abPlaintext => {
+  return p.then(parms => {
+    return subtle_crypt.decrypt(parms).then(abPlaintext => {
       const json = ab2str(abPlaintext)
       // exceptions when parsing json causes the promise to be rejected
       return JSON.parse(json)
@@ -325,6 +323,9 @@ function deserialize () {
     log.debug('Deserialized session data', parsed.userInfo)
     Anvil.session = session = parsed
     Anvil.sessionState = localStorage['anvil.connect.session.state']
+    return session
+  }).then(session => {
+    Anvil.emit('authenticated', session) // todo: may need to emitted on failure also
     return session
   }).catch(e => {
     log.debug('Cannot deserialize session data', e)
@@ -340,6 +341,7 @@ Anvil.deserialize = deserialize
  */
 
 function reset () {
+  log.debug('reset() called: clearing session')
   Anvil.session = session = {}
   this.domAccess.getDocument().cookie = 'anvil.connect=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
   delete localStorage['anvil.connect']
@@ -450,13 +452,16 @@ Anvil.userInfo = userInfo
  */
 
 function callback (response) {
+  log.debug('callback(): entering')
   if (response.error) {
+    log.debug('callback(): with error=', response.error)
     // clear localStorage/cookie/etc
     Anvil.sessionState = response.session_state
     localStorage['anvil.connect.session.state'] = Anvil.sessionState
     Anvil.reset()
     return Promise.reject(response.error)
   } else {
+    log.debug('callback(): on response=', response)
     // NEED TO REVIEW THIS CODE FOR SANITY
     // Check the conditions in which some of these verifications
     // are skipped.
@@ -465,6 +470,7 @@ function callback (response) {
     return Promise.resolve()
       // 1. validate/parse access token
       .then(() => {
+        log.debug('callback(): validateAndParseToken access token:', response.access_token)
         return jwtvalidator.validateAndParseToken(response.access_token)
       })
       .catch(e => {
@@ -472,33 +478,39 @@ function callback (response) {
         throw new Error('Failed to verify or parse access token')
       })
       .then(claims => {
+        log.debug('callback(): settings response.access_claims', claims)
         response.access_claims = claims
       })
       // 2. validate/parse id token
       .then(() => {
-        jwtvalidator.validateAndParseToken(response.id_token)
+        log.debug('callback(): validateAndParseToken id token:', response.id_token)
+        return jwtvalidator.validateAndParseToken(response.id_token)
       })
       .catch(e => {
         log.debug('Exception validating id token', e)
         throw new Error('Failed to verify or parse id token')
       })
       .then(claims => {
+        log.debug('callback(): settings response.id_claims', claims)
         response.id_claims = claims
       })
       // 3. validate nonce
       .then(() => {
+        log.debug('callback(): validating nonce..')
         if (response.id_claims) {
           return Anvil.nonce(response.id_claims.nonce)
         } else {
           return true
         }
       }).then(nonceIsValid => {
+        log.debug('callback(): nonceIsValid=', nonceIsValid)
         if (!nonceIsValid) {
           throw new Error('Invalid nonce.')
         }
       })
       // 4. Verify at_hash
       .then(() => {
+        log.debug('callback(): validating at hash')
         if (['id_token token'].indexOf(Anvil.params.response_type) !== -1) {
           return subtle_crypt.sha256(str2utf8ab(response.access_token))
             .then(ab2hex).then(atHash => {
@@ -513,18 +525,25 @@ function callback (response) {
       .then(() => {
         Anvil.session = response
         Anvil.sessionState = response.session_state
-        log.debug('CALLBACK SESSION STATE', Anvil.sessionState)
+        log.debug('callback(): session state=', Anvil.sessionState)
       })
       // and retrieve user info
       .then(() => {
+        log.debug('callback(): retrieving user info')
         return Anvil.userInfo().catch(e => {
           log.debug('userInfo() retrieval failed with', e)
           throw new Error('Retrieving user info from server failed.')
         })
       })
-      .then(userInfo => {
-        Anvil.session.userInfo = apiHttp.getData(userInfo)
-        Anvil.serialize()
+      .then(userInfoResponse => {
+        let userInfo = apiHttp.getData(userInfoResponse)
+        log.debug('callback(): setting user info', userInfo)
+        Anvil.session.userInfo = userInfo
+        return Anvil.serialize()
+      })
+      .then(() => {
+        log.debug('callback(): emitting authenticated:', Anvil.session)
+        Anvil.emit('authenticated', Anvil.session)
         return Anvil.session
       })
       .catch(e => {
@@ -543,6 +562,7 @@ Anvil.callback = callback
 function authorize () {
   // handle the auth response
   if (this.locAccess.hash()) {
+    console.log('authorize() with hash:', this.locAccess.hash())
     return Anvil.callback(parseFormUrlEncoded(this.locAccess.hash()))
 
   // initiate the auth flow
@@ -609,7 +629,7 @@ function authorize () {
     } else {
       // navigate the current window to the provider
       return Anvil.uri().then(uri => {
-        window.location = this.uri()
+        window.location = uri
       })
     }
   }
@@ -662,12 +682,16 @@ Anvil.signout = signout
 function destination (path) {
   if (path === false) {
     path = localStorage['anvil.connect.destination']
+    log.debug('destination(): deleting and returning:', path)
     delete localStorage['anvil.connect.destination']
     return path
   } else if (path) {
+    log.debug('destination(): setting:', path)
     localStorage['anvil.connect.destination'] = path
   } else {
-    return localStorage['anvil.connect.destination']
+    var dest = localStorage['anvil.connect.destination']
+    log.debug('destination(): retrieving:', dest)
+    return dest
   }
 }
 
@@ -696,9 +720,12 @@ Anvil.checkSession = checkSession
  */
 
 function updateSession (event) {
+  log.debug('updateSession()', event)
   if (event.key === 'anvil.connect') {
+    log.debug('updateSession(): anvil.connect: calling deserialize')
     Anvil.deserialize()
-    Anvil.emit('authenticated', Anvil.session)
+    // happens now in deserialize
+    // Anvil.emit('authenticated', Anvil.session)
   }
 }
 
