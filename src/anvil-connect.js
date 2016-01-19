@@ -1,7 +1,7 @@
 /* eslint-env es6 */
 /* global localStorage */
 
-import 'webcrypto-shim'
+// import 'webcrypto-shim'
 import bows from 'bows'
 import TinyEmitter from 'tiny-emitter'
 import * as jwtvalidator from './anvil-connect.webcryptovalidate'
