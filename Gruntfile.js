@@ -18,12 +18,12 @@ module.exports = function (grunt) {
           expand: true,
           cwd: 'src/',
           src: ['**/*.js'],
-          dest: 'dist'
+          dest: 'lib'
         }]
       }
     },
     clean: {
-      dist: ['dist/*.js', 'dist/*.map']
+      dist: ['lib/*.js', 'lib/*.map']
     }
   })
   grunt.loadNpmTasks('grunt-contrib-clean')

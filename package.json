@@ -16,9 +16,11 @@
   ],
   "main": "anvil-connect.js",
   "directories": {
-    "lib": "src"
+    "lib": "./lib"
   },
   "scripts": {
+    "build": "grunt",
+    "prepublish": "npm run build",
     "test": "karma start --single-run --browsers Chrome && npm run lint",
     "test_unit": "./node_modules/.bin/mocha --compilers js:babel-core/register -r babel-polyfill test_unit",
     "lint-src": "eslint --ignore-path .gitignore src && echo Source code looks good!",
@@ -52,6 +54,13 @@
     "url": "https://github.com/anvilresearch/connect-js/issues"
   },
   "homepage": "https://github.com/anvilresearch/connect-js",
+  "dependencies": {
+    "angular": "^1.4.8",
+    "base64-js": "^1.0.2",
+    "bows": "^1.4.8",
+    "text-encoder-lite": "^1.0.0",
+    "tiny-emitter": "^1.0.2"
+  },
   "devDependencies": {
     "babel-core": "^6.3.26",
     "babel-polyfill": "^6.3.14",
