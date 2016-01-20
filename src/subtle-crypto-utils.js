@@ -1,4 +1,5 @@
-// import 'webcrypto-shim'
+// For the Safari and IE 'webcrypto-shim' must be included for example
+// per script tag before this code.
 import bows from 'bows'
 import {base64urlstr2ab, ascii2ab} from './ab-utils'
 import {segments} from './jws-decode'

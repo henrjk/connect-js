@@ -1,18 +1,11 @@
 /* eslint-env es6 */
 /* global localStorage */
 
-// import 'webcrypto-shim'
 import bows from 'bows'
 import TinyEmitter from 'tiny-emitter'
 import * as jwtvalidator from './jws-validator-webcrypto.js'
 // todo: remove when done: used to use jspm here..'anvil-connect-jwt-validator'
-import * as subtle_crypt from './subtle-crypto-utils'
-import {
-  ab2hex,
-  str2ab, ab2str,
-  ab2base64str, base64str2ab,
-  ab2base64urlstr,
-  str2utf8ab} from './ab-utils'
+import * as encryptor from './encryptor-webcrypto'
 
 let log = bows('Anvil')
 
@@ -243,36 +236,13 @@ Anvil.popup = popup
 Anvil.session = session
 
 /**
- * Serialize session helpers
- */
-
-function secrets2str ({abIv, abKey}) {
-  const b64Iv = ab2base64str(abIv)
-  const b64Key = ab2base64str(abKey)
-  return '' + b64Iv + '.' + b64Key
-}
-
-function str2secrets (str) {
-  const pair = str.split('.')
-  if (pair.length !== 2) {
-    throw new Error('Expected format of string is <base64>.<base64>')
-  }
-  const abs = pair.map(base64str2ab)
-  return {abIv: abs[0], abKey: abs[1]}
-}
-
-/**
  * Serialize session
  */
 
 function serialize () {
   log.debug('serialize(): entering')
   let plaintext = JSON.stringify(Anvil.session)
-  return subtle_crypt.genKeyAndEncrypt(str2ab(plaintext))
-  .then(({abIv, abKey, abEncrypted}) => {
-    const secret = secrets2str({abIv, abKey})
-    return {secret: secret, encrypted: ab2base64str(abEncrypted)}
-  }).then(({secret, encrypted}) => {
+  return encryptor.encrypt(plaintext).then(({secret, encrypted}) => {
     var now = new Date()
     var time = now.getTime()
     var exp = time + (Anvil.session.expires_in || 3600) * 1000
@@ -301,23 +271,24 @@ function deserialize () {
   var parsed
 
   let dom = this.domAccess.getDocument()
-  const p = new Promise(function (resolve, reject) {
+  const p = new Promise(function (resolve) {
     // Use the cookie value to decrypt the session in localStorage
     // Exceptions may occur if data is unexpected or there is no
     // session data yet.
+    // An exception will reject the promise
     const re = /\banvil\.connect=([^\s;]*)/
     const secret = dom.cookie.match(re).pop()
-    const secrets = str2secrets(secret)
-    const encrypted = base64str2ab(localStorage['anvil.connect'])
-    let parms = Object.assign({}, secrets, {abEncrypted: encrypted})
+    const encrypted = localStorage['anvil.connect']
+    let parms = Object.assign({}, {
+      secret: secret,
+      encrypted: encrypted})
     resolve(parms)
   })
 
   return p.then(parms => {
-    return subtle_crypt.decrypt(parms).then(abPlaintext => {
-      const json = ab2str(abPlaintext)
+    return encryptor.decrypt(parms).then(plaintext => {
       // exceptions when parsing json causes the promise to be rejected
-      return JSON.parse(json)
+      return JSON.parse(plaintext)
     })
   }).then(parsed => {
     log.debug('Deserialized session data', parsed.userInfo)
@@ -365,12 +336,6 @@ function uri (endpoint, options) {
 
 Anvil.uri = uri
 
-function generateNonce () {
-  let bytes = new Uint8Array(10)
-  window.crypto.getRandomValues(bytes)
-  return ab2base64urlstr(bytes).substr(0, 10)
-}
-
 /**
  * Create or verify a nonce
  */
@@ -382,7 +347,7 @@ function nonce (nonce) {
     }
     return Anvil.sha256url(localStorage['nonce']).then(val => val === nonce)
   } else {
-    localStorage['nonce'] = generateNonce()
+    localStorage['nonce'] = encryptor.generateNonce()
     return Anvil.sha256url(localStorage['nonce'])
   }
 }
@@ -391,9 +356,12 @@ Anvil.nonce = nonce
 
 /**
  * Base64url encode a SHA256 hash of the input string
+ *
+ * @param str
+ * @returns {promise}
  */
 function sha256url (str) {
-  return subtle_crypt.sha256(str2utf8ab(str)).then(ab2base64urlstr)
+  return encryptor.sha256url(str)
 }
 
 Anvil.sha256url = sha256url
@@ -512,8 +480,8 @@ function callback (response) {
       .then(() => {
         log.debug('callback(): validating at hash')
         if (['id_token token'].indexOf(Anvil.params.response_type) !== -1) {
-          return subtle_crypt.sha256(str2utf8ab(response.access_token))
-            .then(ab2hex).then(atHash => {
+          return encryptor.sha256sum(response.access_token)
+            .then(atHash => {
               atHash = atHash.slice(0, atHash.length / 2)
               if (response.id_claims && atHash !== response.id_claims.at_hash) {
                 throw new Error('Invalid access token hash in id token payload')

@@ -1,6 +1,6 @@
 /* eslint-env jasmine */
 /* global localStorage */
-
+import 'webcrypto-shim'
 import {module, inject} from 'angular-mocks'
 import '../src/anvil-connect-angular'
 

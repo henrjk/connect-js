@@ -1,5 +1,6 @@
 /* eslint-env es6 */
-
+// For the Safari and IE 'webcrypto-shim' must be included for example
+// per script tag before this code.
 import * as jwks from './jwks'
 import {verifyJWT} from './subtle-crypto-utils'
 import {decodeSegment} from './jws-decode'

@@ -1,5 +1,6 @@
 /* eslint-env jasmine */
 /* eslint-disable quotes */
+import 'webcrypto-shim'
 import * as se from '../src/subtle-crypto-utils'
 import * as jws from '../src/jws-decode'
 import {ab2hex, hex2ab, str2ab, ab2str,
