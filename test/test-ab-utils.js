@@ -6,7 +6,7 @@ import {
   base64str2ab, ab2base64str,
   base64urlstr2ab, ab2base64urlstr,
   str2utf8ab, abutf82str,
-  ascii2ab} from '../src/ab_utils'
+  ascii2ab} from '../src/ab-utils'
 
 describe('Check ab_utils conversion hex to arraybuffer conversion', () => {
   it('hex2ab of empty string is 0 bytes long', () => {

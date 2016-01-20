@@ -1,8 +1,8 @@
 /* eslint-env es6 */
 
 import * as jwks from './jwks'
-import {verifyJWT} from './subtle_encrypt'
-import {decodeSegment} from './jws'
+import {verifyJWT} from './subtle-crypto-utils'
+import {decodeSegment} from './jws-decode'
 import bows from 'bows'
 
 const log = bows('webcryptovalidate')

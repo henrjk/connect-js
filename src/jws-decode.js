@@ -1,4 +1,4 @@
-import {base64urlstr2ab, abutf82str} from './ab_utils'
+import {base64urlstr2ab, abutf82str} from './ab-utils'
 
 export function decodeSegment (base64url) {
   const utf8ab = base64urlstr2ab(base64url)

@@ -1,9 +1,9 @@
 /* eslint-env jasmine */
 /* eslint-disable quotes */
-import * as se from '../src/subtle_encrypt'
-import * as jws from '../src/jws'
+import * as se from '../src/subtle-crypto-utils'
+import * as jws from '../src/jws-decode'
 import {ab2hex, hex2ab, str2ab, ab2str,
-  ab2base64urlstr, base64urlstr2ab} from '../src/ab_utils'
+  ab2base64urlstr, base64urlstr2ab} from '../src/ab-utils'
 
 import {encodeJWSSegment} from './tlib'
 import bows from 'bows'

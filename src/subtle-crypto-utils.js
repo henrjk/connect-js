@@ -1,7 +1,7 @@
 // import 'webcrypto-shim'
 import bows from 'bows'
-import {base64urlstr2ab, ascii2ab} from './ab_utils'
-import {segments} from './jws'
+import {base64urlstr2ab, ascii2ab} from './ab-utils'
+import {segments} from './jws-decode'
 
 const log = bows('./subtle_encrypt')
 

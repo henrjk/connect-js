@@ -4,15 +4,15 @@
 // import 'webcrypto-shim'
 import bows from 'bows'
 import TinyEmitter from 'tiny-emitter'
-import * as jwtvalidator from './anvil-connect.webcryptovalidate'
+import * as jwtvalidator from './jws-validator-webcrypto.js'
 // todo: remove when done: used to use jspm here..'anvil-connect-jwt-validator'
-import * as subtle_crypt from './subtle_encrypt'
+import * as subtle_crypt from './subtle-crypto-utils'
 import {
   ab2hex,
   str2ab, ab2str,
   ab2base64str, base64str2ab,
   ab2base64urlstr,
-  str2utf8ab} from './ab_utils'
+  str2utf8ab} from './ab-utils'
 
 let log = bows('Anvil')
 

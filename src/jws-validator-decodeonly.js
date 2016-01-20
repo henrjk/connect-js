@@ -23,7 +23,7 @@
 
 'use strict'  // ES6 modules are strict but may be safer for transpiling perhaps
 
-import * as jws from './jws'
+import * as jws from './jws-decode'
 
 /**
  * JWKs  configuration

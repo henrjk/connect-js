@@ -1,4 +1,4 @@
-import {str2utf8ab, ab2base64urlstr} from '../src/ab_utils'
+import {str2utf8ab, ab2base64urlstr} from '../src/ab-utils'
 
 export function encodeJWSSegment (jsonObject) {
   const json = JSON.stringify(jsonObject)
