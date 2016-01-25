@@ -3,9 +3,8 @@
 
 import bows from 'bows'
 import TinyEmitter from 'tiny-emitter'
-import * as jwtvalidator from './jws-validator-webcrypto.js'
-// todo: remove when done: used to use jspm here..'anvil-connect-jwt-validator'
-import * as encryptor from './encryptor-webcrypto'
+import * as jwks from './jwks'
+import cryptors from './cryptors-with-fallbacks'
 
 let log = bows('Anvil')
 
@@ -102,7 +101,7 @@ extend(Anvil, TinyEmitter.prototype)
 function configure (options) {
   var params
   Anvil.issuer = options.issuer
-  jwtvalidator.configure(Anvil, options)
+  jwks.setJWK(options.jwk)
 
   Anvil.params = params = {}
   params.response_type = options.response_type || 'id_token token'
@@ -134,6 +133,8 @@ function init (providerOptions, apis) {
 
 Anvil.init = init
 
+Anvil.setNoWebCryptoFallbacks = cryptors.setNoWebCryptoFallbacks
+
 /**
  * Do initializations which may require network calls.
  *
@@ -141,7 +142,7 @@ Anvil.init = init
  */
 
 function prepareAuthorization () {
-  return jwtvalidator.prepareValidate()
+  return jwks.prepareKeys()
     .then(function (val) {
       log.debug('Anvil.prepareAuthorization() succeeded.', val)
       return val
@@ -242,7 +243,7 @@ Anvil.session = session
 function serialize () {
   log.debug('serialize(): entering')
   let plaintext = JSON.stringify(Anvil.session)
-  return encryptor.encrypt(plaintext).then(({secret, encrypted}) => {
+  return cryptors.encryptor.encrypt(plaintext).then(({secret, encrypted}) => {
     var now = new Date()
     var time = now.getTime()
     var exp = time + (Anvil.session.expires_in || 3600) * 1000
@@ -286,7 +287,7 @@ function deserialize () {
   })
 
   return p.then(parms => {
-    return encryptor.decrypt(parms).then(plaintext => {
+    return cryptors.encryptor.decrypt(parms).then(plaintext => {
       // exceptions when parsing json causes the promise to be rejected
       return JSON.parse(plaintext)
     })
@@ -347,7 +348,7 @@ function nonce (nonce) {
     }
     return Anvil.sha256url(localStorage['nonce']).then(val => val === nonce)
   } else {
-    localStorage['nonce'] = encryptor.generateNonce()
+    localStorage['nonce'] = cryptors.encryptor.generateNonce()
     return Anvil.sha256url(localStorage['nonce'])
   }
 }
@@ -361,7 +362,7 @@ Anvil.nonce = nonce
  * @returns {promise}
  */
 function sha256url (str) {
-  return encryptor.sha256url(str)
+  return cryptors.encryptor.sha256url(str)
 }
 
 Anvil.sha256url = sha256url
@@ -435,11 +436,19 @@ function callback (response) {
     // are skipped.
     let apiHttp = this.apiHttp
 
+    const jwtvalidator = cryptors.jwtvalidator
+
     return Promise.resolve()
+      // 0. ensure there is a jwk unless jwtvalidator does not need it.
+      .then(() => {
+        if (!jwtvalidator.noJWKrequired && !jwks.jwk) {
+          throw new Error('You must call and fulfill Anvil.prepareAuthorization() before attempting to validate tokens')
+        }
+      })
       // 1. validate/parse access token
       .then(() => {
         log.debug('callback(): validateAndParseToken access token:', response.access_token)
-        return jwtvalidator.validateAndParseToken(response.access_token)
+        return jwtvalidator.validateAndParseToken(jwks.jwk, response.access_token)
       })
       .catch(e => {
         log.debug('Exception validating access token', e)
@@ -452,7 +461,7 @@ function callback (response) {
       // 2. validate/parse id token
       .then(() => {
         log.debug('callback(): validateAndParseToken id token:', response.id_token)
-        return jwtvalidator.validateAndParseToken(response.id_token)
+        return jwtvalidator.validateAndParseToken(jwks.jwk, response.id_token)
       })
       .catch(e => {
         log.debug('Exception validating id token', e)
@@ -480,7 +489,7 @@ function callback (response) {
       .then(() => {
         log.debug('callback(): validating at hash')
         if (['id_token token'].indexOf(Anvil.params.response_type) !== -1) {
-          return encryptor.sha256sum(response.access_token)
+          return cryptors.encryptor.sha256sum(response.access_token)
             .then(atHash => {
               atHash = atHash.slice(0, atHash.length / 2)
               if (response.id_claims && atHash !== response.id_claims.at_hash) {

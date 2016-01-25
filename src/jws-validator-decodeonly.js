@@ -25,27 +25,14 @@
 
 import * as jws from './jws-decode'
 
-/**
- * JWKs  configuration
- */
-
-export function configure (anvil, options) {
-}
-
-/*
- * Prepare validate
- *
- * Nothing to do really but callers expect a promise return value
- */
-export function prepareValidate () {
-  return Promise.resolve()
-}
+export const noJWKrequired = true // default if absent is to require key
 
 /**
  * Validate tokens
  */
-
-export function validateAndParseToken (token) {
+export function validateAndParseToken (jwk, token) {
+  // If this turns out to be a strategy widely deployed we may
+  // optimize the caller to not require the jwk
   const p = Promise.resolve(undefined)
   if (!token) {
     return p

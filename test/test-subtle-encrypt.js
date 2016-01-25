@@ -11,7 +11,7 @@ import bows from 'bows'
 
 const log = bows('Anvil Test')
 
-// localStorage.debug = true triggers log statements
+// localStorage.debug = true // triggers log statements
 
 describe('Check generateEncryptionKey produces key', () => {
   let result = {}
@@ -146,7 +146,9 @@ describe('Check jwk sign verification', () => {
       )
     })
     it('should NOT verify a none matching hardcoded token with key', done => {
-      se.verifyJWT(key.jwk, `${header}.${payload}.${header}`).then(
+      const badToken = `${header}.${payload}.${header}`
+      log.debug('badToken=', badToken)
+      se.verifyJWT(key.jwk, badToken).then(
         verifiedToken => {
           expect(undefined).toBeDefined()
           done()
@@ -160,7 +162,9 @@ describe('Check jwk sign verification', () => {
     // https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
     it('should NOT verify a token with a substituted alg: none header', done => {
       let algNoneHeader = encodeJWSSegment({"alg": "none"})
-      se.verifyJWT(key.jwk, `${algNoneHeader}.${payload}.${signature}`).then(
+      const algNoneToken = `${algNoneHeader}.${payload}.${signature}`
+      log.debug('algNoneToken=', algNoneToken)
+      se.verifyJWT(key.jwk, algNoneToken).then(
         () => {
           expect(undefined).toBeDefined()
           done()
