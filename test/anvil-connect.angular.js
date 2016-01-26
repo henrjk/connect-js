@@ -4,6 +4,8 @@ import 'webcrypto-shim'
 import {module, inject} from 'angular-mocks'
 import '../src/anvil-connect-angular'
 
+import * as jwsValidatorDecodeonly from '../src/jws-validator-decodeonly'
+
 describe('Anvil Connect', function () {
   var {Anvil, AnvilProvider, uri, $httpBackend, promise} = {}
 
@@ -438,7 +440,54 @@ describe('Anvil Connect', function () {
     })
   })
 
-    // it 'should serialize the session'
+  describe('callback with bad signature for authorization response and jws-validator-decodeonly', function () {
+    let result = {}
+    // pretty bad hack but it works.
+    // the flush must happen after the request
+    function flushHttpBackend () {
+      try {
+        $httpBackend.flush()
+      } catch (e) {
+        setTimeout(flushHttpBackend, 0) // try again
+      }
+    }
+
+    beforeEach(function (done) {
+      uri = config.issuer + '/userinfo'
+      $httpBackend.when('GET', uri).respond({})
+      Anvil.setNoWebCryptoFallbacks({
+        jwtvalidatorOptions: {fallback: jwsValidatorDecodeonly, forceFallback: true}})
+
+      promise = Anvil.promise.callback({ access_token: 'eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.eyJhbGciOiJSUzI1NiJ9' })
+      setTimeout(flushHttpBackend, 0)
+      promise.then(s => {
+        result.session = s
+        done()
+      }, e => {
+        result.err = e
+        done()
+      })
+    })
+
+    afterEach(function () {
+      Anvil.setNoWebCryptoFallbacks({
+        jwtvalidatorOptions: {}})
+    })
+
+    it('should return a promise', function () {
+      expect(promise.then).toBeDefined()
+    })
+
+    it('should set session property on the service', function () {
+      expect(Anvil.session.access_token).toBe('eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.eyJhbGciOiJSUzI1NiJ9')
+    })
+
+    it('should set session property on the service', function () {
+      expect(Anvil.session.access_token).toBe('eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.eyJhbGciOiJSUzI1NiJ9')
+    })
+  })
+
+  // it 'should serialize the session'
 
     // it 'should resolve the promise'
 
