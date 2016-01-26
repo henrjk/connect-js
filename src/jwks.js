@@ -62,7 +62,7 @@ export function prepareKeys () {
 
 function getKeys () {
   var apiHttp = Anvil.apiHttp
-  return Anvil.request({
+  return Anvil.promise.request({
     method: 'GET',
     url: Anvil.issuer + '/jwks',
     crossDomain: true

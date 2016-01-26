@@ -27,26 +27,37 @@ lorem ipsum dolor amit
 -->
 
 #### Anvil.init()
-
-#### Anvil.prepareAuthorization
-
+since 0.2.0
+#### Anvil.promise.prepareAuthorization
+since 0.2.0
+#### Anvil.once
+since 0.2.0
 
 #### Anvil.toFormUrlEncoded(obj)
 #### Anvil.parseFormUrlEncoded(str)
 #### Anvil.getUrlFragment(url)
 #### Anvil.popup(popupWidth, popupHeight)
 #### Anvil.session
-#### Anvil.serialize()
-#### Anvil.deserialize()
+#### Anvil.promise.serialize()
+since 0.2.0 this is a promise
+#### Anvil.promise.deserialize()
+since 0.2.0 this is a promise
 #### Anvil.reset()
-#### Anvil.uri()
-#### Anvil.nonce()
-#### Anvil.sha256url()
+#### Anvil.promise.uri()
+since 0.2.0 this is a promise
+#### Anvil.promise.nonce()
+since 0.2.0 this is a promise
+#### Anvil.promise.sha256url()
+since 0.2.0 this is a promise
 #### Anvil.headers()
-#### Anvil.request()
-#### Anvil.userInfo()
-#### Anvil.callback(response)
-#### Anvil.authorize()
+#### Anvil.promise.request()
+since 0.2.0: was promise before but now is no longer available under Anvil.request()
+#### Anvil.promise.userInfo()
+since 0.2.0: was promise before but now is no longer available under Anvil.request()
+#### Anvil.promise.callback(response)
+since 0.2.0: was promise before but now is no longer available under Anvil.request()
+#### Anvil.promise.authorize()
+since 0.2.0: was promise before but now is no longer available under Anvil.request()
 #### Anvil.signout(path)
 #### Anvil.destination(path)
 #### Anvil.checkSession(id)
@@ -94,12 +105,12 @@ angular.module('App', ['...', 'anvil'])
   })
 ```
 
-You can inject the Anvil service into your controllers and call `Anvil.authorize()` wherever you want to initiate an OpenID Connect authentication flow.
+You can inject the Anvil service into your controllers and call `Anvil.promise.authorize()` wherever you want to initiate an OpenID Connect authentication flow.
 
 ```javascript
   .controller(function ($scope, ..., Anvil) {
     $scope.signin = function () {
-      Anvil.authorize();
+      Anvil.promise.authorize();
     };
   })
 ```
@@ -131,7 +142,7 @@ angular.module('App', ['...', 'anvil'])
       .when('/callback', {
         resolve: {
           session: function ($location, Anvil) {
-            Anvil.authorize().then(
+            Anvil.promise.authorize().then(
               function (response) {
                 $location.url('/');
               },

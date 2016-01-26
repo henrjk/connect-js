@@ -43,7 +43,7 @@ angular.module('anvil', [])
 
     function requireAuthentication ($location, Anvil) {
       if (!Anvil.isAuthenticated()) {
-        Anvil.authorize()
+        Anvil.promise.authorize()
       }
 
       return Anvil.session
@@ -58,7 +58,7 @@ angular.module('anvil', [])
     Anvil.requireScope = function (scope, fail) {
       return ['$location', 'Anvil', function requireScope ($location, Anvil) {
         if (!Anvil.isAuthenticated()) {
-          Anvil.authorize()
+          return Anvil.promise.authorize()
         } else if (Anvil.session.access_claims.scope.indexOf(scope) === -1) {
           $location.path(fail)
           return false

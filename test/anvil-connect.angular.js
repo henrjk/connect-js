@@ -108,11 +108,11 @@ describe('Anvil Connect', function () {
     })
   })
 
-  describe('serialize', function () {
+  describe('promise.serialize', function () {
     beforeEach(function (done) {
       delete localStorage['anvil.connect']
       Anvil.session.access_token = 'random'
-      Anvil.serialize().then(r => {
+      Anvil.promise.serialize().then(r => {
         this.result = r
         done()
       }).catch(e => {
@@ -126,7 +126,7 @@ describe('Anvil Connect', function () {
     })
   })
 
-  describe('deserialize', function () {
+  describe('promise.deserialize', function () {
     it('should retrieve and parse the current session from localStorage')
   })
 
@@ -138,7 +138,7 @@ describe('Anvil Connect', function () {
 
   describe('uri with "authorize" endpoint', function () {
     beforeEach(function (done) {
-      Anvil.uri().then(v => {
+      Anvil.promise.uri().then(v => {
         uri = v
         done()
       })
@@ -175,7 +175,7 @@ describe('Anvil Connect', function () {
 
   describe('uri with "signin" endpoint', function () {
     beforeEach(function (done) {
-      Anvil.uri('signin').then(v => {
+      Anvil.promise.uri('signin').then(v => {
         uri = v
         done()
       })
@@ -212,7 +212,7 @@ describe('Anvil Connect', function () {
 
   describe('uri with "signup" endpoint', function () {
     beforeEach(function (done) {
-      Anvil.uri('signup').then(v => {
+      Anvil.promise.uri('signup').then(v => {
         uri = v
         done()
       })
@@ -259,7 +259,7 @@ describe('Anvil Connect', function () {
   describe('nonce without argument', function () {
     let result = {}
     beforeEach(function (done) {
-      Anvil.nonce().then(nonce => {
+      Anvil.promise.nonce().then(nonce => {
         result.nonce = nonce
         done()
       }).catch(e => {
@@ -279,7 +279,7 @@ describe('Anvil Connect', function () {
   describe('nonce with argument', function () {
     let result = {}
     beforeEach(function (done) {
-      Anvil.nonce().then(nonce => {
+      Anvil.promise.nonce().then(nonce => {
         result.nonce = nonce
         done()
       }).catch(e => {
@@ -289,14 +289,14 @@ describe('Anvil Connect', function () {
     })
 
     it('should verify an argument matching a hash of the value in localStorage', function (done) {
-      Anvil.nonce(result.nonce).then(val => {
+      Anvil.promise.nonce(result.nonce).then(val => {
         expect(val).toBe(true)
         done()
       })
     })
 
     it('should not verify a mismatching argument', function (done) {
-      Anvil.nonce('WRONG').then(val => {
+      Anvil.promise.nonce('WRONG').then(val => {
         expect(val).toBe(false)
         done()
       })
@@ -308,7 +308,7 @@ describe('Anvil Connect', function () {
     const input = 'test'
 
     beforeEach(function (done) {
-      Anvil.sha256url(input).then(r => {
+      Anvil.promise.sha256url(input).then(r => {
         result.sha256url = r
         done()
       }).catch(e => {
@@ -347,7 +347,7 @@ describe('Anvil Connect', function () {
     })
 
     it('should add a bearer token to an HTTP request', function (done) {
-      promise = Anvil.request({ method: 'GET', url: uri })
+      promise = Anvil.promise.request({ method: 'GET', url: uri })
       setTimeout(() => {
         $httpBackend.flush()
         promise.then(() => {
@@ -365,7 +365,7 @@ describe('Anvil Connect', function () {
         {'Authorization': `Bearer ${Anvil.session.access_token}`,
         'Accept': 'application/json, text/plain, */*'}
       $httpBackend.expectGET(uri, headers).respond(200, {})
-      promise = Anvil.userInfo()
+      promise = Anvil.promise.userInfo()
       setTimeout(() => {
         $httpBackend.flush()
         promise.then(() => {
@@ -378,7 +378,7 @@ describe('Anvil Connect', function () {
   describe('callback with error response', function () {
     beforeEach(function () {
       localStorage['anvil.connect'] = '{}'
-      promise = Anvil.callback({ error: 'invalid' })
+      promise = Anvil.promise.callback({ error: 'invalid' })
     })
     afterEach(function (done) {
       promise.catch(() => {
@@ -418,7 +418,7 @@ describe('Anvil Connect', function () {
       uri = config.issuer + '/userinfo'
       $httpBackend.when('GET', uri).respond({})
 
-      promise = Anvil.callback({ access_token: 'eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ' })
+      promise = Anvil.promise.callback({ access_token: 'eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ' })
       setTimeout(flushHttpBackend, 0)
       promise.then(s => {
         result.session = s

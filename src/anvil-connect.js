@@ -9,7 +9,9 @@ import cryptors from './cryptors-with-fallbacks'
 let log = bows('Anvil')
 
 let session = {}
-let Anvil = {}
+let Anvil = {
+  promise: {}
+}
 
 // All init functions below must be called!
 /**
@@ -28,7 +30,7 @@ function initHttpAccess (http) {
   if (http && typeof http === 'object' &&
     typeof http.request === 'function' &&
     typeof http.getData === 'function') {
-    Anvil.apiHttp = this.apiHttp = http
+    Anvil.apiHttp = http
   } else {
     throw new Error("Must pass in object with functions in fields: 'request', 'getData'.")
   }
@@ -43,7 +45,7 @@ function initLocationAccess (loc) {
   if (loc && typeof loc === 'object' &&
     typeof loc.hash === 'function' &&
     typeof loc.path === 'function') {
-    this.locAccess = loc
+    Anvil.locAccess = loc
     return
   }
   throw new Error("Must pass in object with functions in fields: 'hash', 'path'.")
@@ -57,7 +59,7 @@ function initDOMAccess (da) {
   if (da && typeof da === 'object' &&
     typeof da.getWindow === 'function' &&
     typeof da.getDocument === 'function') {
-    this.domAccess = da
+    Anvil.domAccess = da
     return
   }
   throw new Error("Must pass in object with functions in fields: 'getWindow', 'getDocument'.")
@@ -144,15 +146,15 @@ Anvil.setNoWebCryptoFallbacks = cryptors.setNoWebCryptoFallbacks
 function prepareAuthorization () {
   return jwks.prepareKeys()
     .then(function (val) {
-      log.debug('Anvil.prepareAuthorization() succeeded.', val)
+      log.debug('prepareAuthorization() succeeded.', val)
       return val
     }, function (err) {
-      log.warn('Anvil.prepareAuthorization() failed:', err.stack)
+      log.warn('prepareAuthorization() failed:', err.stack)
       throw err
     })
 }
 
-Anvil.prepareAuthorization = prepareAuthorization
+Anvil.promise.prepareAuthorization = prepareAuthorization
 
 /**
  * Form Urlencode an object
@@ -208,8 +210,8 @@ Anvil.getUrlFragment = getUrlFragment
 function popup (popupWidth, popupHeight) {
   var x0, y0, width, height, popupLeft, popupTop
 
-  var window = this.domAccess.getWindow()
-  var documentElement = this.domAccess.getDocument().documentElement
+  var window = Anvil.domAccess.getWindow()
+  var documentElement = Anvil.domAccess.getDocument().documentElement
 
   // Metrics for the current browser win.
   x0 = window.screenX || window.screenLeft
@@ -249,7 +251,7 @@ function serialize () {
     var exp = time + (Anvil.session.expires_in || 3600) * 1000
 
     now.setTime(exp)
-    this.domAccess.getDocument().cookie = 'anvil.connect=' + secret +
+    Anvil.domAccess.getDocument().cookie = 'anvil.connect=' + secret +
       '; expires=' + now.toUTCString()
 
     log.debug('serialize() stored secret in COOKIE anvil.connect')
@@ -263,7 +265,7 @@ function serialize () {
   })
 }
 
-Anvil.serialize = serialize
+Anvil.promise.serialize = serialize
 
 /**
  * Deserialize session
@@ -271,7 +273,7 @@ Anvil.serialize = serialize
 function deserialize () {
   var parsed
 
-  let dom = this.domAccess.getDocument()
+  let dom = Anvil.domAccess.getDocument()
   const p = new Promise(function (resolve) {
     // Use the cookie value to decrypt the session in localStorage
     // Exceptions may occur if data is unexpected or there is no
@@ -306,7 +308,7 @@ function deserialize () {
   })
 }
 
-Anvil.deserialize = deserialize
+Anvil.promise.deserialize = deserialize
 
 /**
  * Reset
@@ -315,7 +317,7 @@ Anvil.deserialize = deserialize
 function reset () {
   log.debug('reset() called: clearing session')
   Anvil.session = session = {}
-  this.domAccess.getDocument().cookie = 'anvil.connect=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+  Anvil.domAccess.getDocument().cookie = 'anvil.connect=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
   delete localStorage['anvil.connect']
 }
 
@@ -326,7 +328,7 @@ Anvil.reset = reset
  */
 
 function uri (endpoint, options) {
-  return Anvil.nonce().then(nonce => {
+  return Anvil.promise.nonce().then(nonce => {
     return Anvil.issuer + '/' +
       (endpoint || 'authorize') + '?' +
       toFormUrlEncoded(extend({}, Anvil.params, options, {
@@ -335,7 +337,7 @@ function uri (endpoint, options) {
   })
 }
 
-Anvil.uri = uri
+Anvil.promise.uri = uri
 
 /**
  * Create or verify a nonce
@@ -346,14 +348,14 @@ function nonce (nonce) {
     if (!lnonce) {
       return Promise.resolve(false)
     }
-    return Anvil.sha256url(localStorage['nonce']).then(val => val === nonce)
+    return Anvil.promise.sha256url(localStorage['nonce']).then(val => val === nonce)
   } else {
     localStorage['nonce'] = cryptors.encryptor.generateNonce()
-    return Anvil.sha256url(localStorage['nonce'])
+    return Anvil.promise.sha256url(localStorage['nonce'])
   }
 }
 
-Anvil.nonce = nonce
+Anvil.promise.nonce = nonce
 
 /**
  * Base64url encode a SHA256 hash of the input string
@@ -365,16 +367,16 @@ function sha256url (str) {
   return cryptors.encryptor.sha256url(str)
 }
 
-Anvil.sha256url = sha256url
+Anvil.promise.sha256url = sha256url
 
 /**
  * Headers
  */
 
 function headers (headers) {
-  if (this.session.access_token) {
+  if (Anvil.session.access_token) {
     return extend(headers || {}, {
-      'Authorization': 'Bearer ' + this.session.access_token
+      'Authorization': 'Bearer ' + Anvil.session.access_token
     })
   } else {
     return headers
@@ -388,33 +390,33 @@ Anvil.headers = headers
  */
 
 function request (config) {
-  config.headers = this.headers(config.headers)
+  config.headers = Anvil.headers(config.headers)
   config.crossDomain = true
-  return Promise.resolve(this.apiHttp.request(config)
+  return Promise.resolve(Anvil.apiHttp.request(config)
     .then(function (val) {
-      log.debug('Anvil.request succeeded.', config)
+      log.debug('request() succeeded.', config)
       return val
     }, function (err) {
-      log.warn('Anvil.request failed:', config, err.stack)
+      log.warn('request() failed:', config, err.stack)
       throw err
     }))
 }
 
-Anvil.request = request
+Anvil.promise.request = request
 
 /**
  * UserInfo
  */
 
 function userInfo () {
-  return this.request({
+  return Anvil.promise.request({
     method: 'GET',
     url: Anvil.issuer + '/userinfo',
     crossDomain: true
   })
 }
 
-Anvil.userInfo = userInfo
+Anvil.promise.userInfo = userInfo
 
 /**
  * Callback
@@ -434,7 +436,7 @@ function callback (response) {
     // NEED TO REVIEW THIS CODE FOR SANITY
     // Check the conditions in which some of these verifications
     // are skipped.
-    let apiHttp = this.apiHttp
+    let apiHttp = Anvil.apiHttp
 
     const jwtvalidator = cryptors.jwtvalidator
 
@@ -475,7 +477,7 @@ function callback (response) {
       .then(() => {
         log.debug('callback(): validating nonce..')
         if (response.id_claims) {
-          return Anvil.nonce(response.id_claims.nonce)
+          return Anvil.promise.nonce(response.id_claims.nonce)
         } else {
           return true
         }
@@ -507,7 +509,7 @@ function callback (response) {
       // and retrieve user info
       .then(() => {
         log.debug('callback(): retrieving user info')
-        return Anvil.userInfo().catch(e => {
+        return Anvil.promise.userInfo().catch(e => {
           log.debug('userInfo() retrieval failed with', e)
           throw new Error('Retrieving user info from server failed.')
         })
@@ -516,7 +518,7 @@ function callback (response) {
         let userInfo = apiHttp.getData(userInfoResponse)
         log.debug('callback(): setting user info', userInfo)
         Anvil.session.userInfo = userInfo
-        return Anvil.serialize()
+        return Anvil.promise.serialize()
       })
       .then(() => {
         log.debug('callback(): emitting authenticated:', Anvil.session)
@@ -530,7 +532,7 @@ function callback (response) {
   }
 }
 
-Anvil.callback = callback
+Anvil.promise.callback = callback
 
 /**
  * Authorize
@@ -538,15 +540,15 @@ Anvil.callback = callback
 
 function authorize () {
   // handle the auth response
-  if (this.locAccess.hash()) {
-    console.log('authorize() with hash:', this.locAccess.hash())
-    return Anvil.callback(parseFormUrlEncoded(this.locAccess.hash()))
+  if (Anvil.locAccess.hash()) {
+    console.log('authorize() with hash:', Anvil.locAccess.hash())
+    return Anvil.promise.callback(parseFormUrlEncoded(Anvil.locAccess.hash()))
 
   // initiate the auth flow
   } else {
-    Anvil.destination(this.locAccess.path())
+    Anvil.destination(Anvil.locAccess.path())
 
-    var window = this.domAccess.getWindow()
+    var window = Anvil.domAccess.getWindow()
     if (Anvil.display === 'popup') {
       // open the signin page in a popup window
       // In a typical case the popup window will be redirected
@@ -564,7 +566,7 @@ function authorize () {
         let listener = function listener (event) {
           if (event.data !== '__ready__') {
             var fragment = getUrlFragment(event.data)
-            Anvil.callback(parseFormUrlEncoded(fragment))
+            Anvil.promise.callback(parseFormUrlEncoded(fragment))
               .then(
               function (result) {
                 resolve(result)
@@ -587,7 +589,7 @@ function authorize () {
       // The passwordless login method sends the user a link in an email.
       // When the user presses this link then a new window openes with the
       // configured callback.
-      // In this case the callback page has no opener and is expected to
+      // In Anvil case the callback page has no opener and is expected to
       // call Anvil.callback itself.
       // The listener below will react to the case where there is a
       // successful login and then close the popup.
@@ -599,29 +601,29 @@ function authorize () {
           }
         })
       })
-      return Anvil.uri().then(uri => {
-        popup = window.open(this.uri(), 'anvil', Anvil.popup(700, 500))
+      return Anvil.promise.uri().then(uri => {
+        popup = window.open(uri, 'anvil', Anvil.popup(700, 500))
         return Promise.race([authMessageReceived, authenticated])
       })
     } else {
       // navigate the current window to the provider
-      return Anvil.uri().then(uri => {
+      return Anvil.promise.uri().then(uri => {
         window.location = uri
       })
     }
   }
 }
 
-Anvil.authorize = authorize
+Anvil.promise.authorize = authorize
 
 /**
  * Signout
  */
 
 function signout (path) {
-  var win = this.domAccess.getWindow()
+  var win = Anvil.domAccess.getWindow()
   // parse the window location
-  var url = this.domAccess.getDocument().createElement('a')
+  var url = Anvil.domAccess.getDocument().createElement('a')
   url.href = win.location.href
   url.pathname = path || '/'
 
@@ -684,8 +686,8 @@ Anvil.destination = destination
  */
 
 function checkSession (id) {
-  var targetOrigin = this.issuer
-  var message = this.params.client_id + ' ' + this.sessionState
+  var targetOrigin = Anvil.issuer
+  var message = Anvil.params.client_id + ' ' + Anvil.sessionState
   var w = window.parent.document.getElementById(id).contentWindow
   w.postMessage(message, targetOrigin)
 }
@@ -700,13 +702,13 @@ function updateSession (event) {
   log.debug('updateSession()', event)
   if (event.key === 'anvil.connect') {
     log.debug('updateSession(): anvil.connect: calling deserialize')
-    Anvil.deserialize()
+    Anvil.promise.deserialize()
     // happens now in deserialize
     // Anvil.emit('authenticated', Anvil.session)
   }
 }
 
-Anvil.updateSession = updateSession
+Anvil.updateSession = updateSession  // todo: should this be a promise?
 
 /**
  * Is Authenticated

@@ -1,6 +1,6 @@
 {
   "name": "anvil-connect-js",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Anvil Connect JavaScript client for web browsers",
   "author": {
     "name": "Christian Smith",
@@ -12,16 +12,21 @@
       "name": "Tom Kersten",
       "email": "tom@whitespur.com",
       "url": "http://tomkersten.com"
+    },
+    {
+      "name": "Henrich Kraemer"
     }
   ],
   "main": "anvil-connect.js",
   "directories": {
+    "src": "./src",
     "lib": "./lib"
   },
+  "registry": "npm",
   "scripts": {
     "build": "grunt",
     "prepublish": "npm run build",
-    "test": "karma start --single-run --browsers Chrome && npm run lint",
+    "test": "npm run test-chrome && npm run lint",
     "test_unit": "./node_modules/.bin/mocha --compilers js:babel-core/register -r babel-polyfill test_unit",
     "lint-src": "eslint --ignore-path .gitignore src && echo Source code looks good!",
     "lint": "eslint --ignore-path .gitignore src test test.extended && echo Code looks good!",
@@ -34,7 +39,7 @@
     "test-all-travis": "karma start --single-run --browsers Safari,Firefox,ChromeOnTravis",
     "karma-browsers": "karma start --browsers Safari,Firefox,Chrome",
     "karma-browsers-extended": "karma start karma.conf.extended.js --browsers Safari,Firefox,Chrome",
-    "karma-run": "karma run"
+    "karma": "karma run"
   },
   "repository": {
     "type": "git",
@@ -58,6 +63,7 @@
     "angular": "^1.4.8",
     "base64-js": "^1.0.2",
     "bows": "^1.4.8",
+    "q": "^1.4.1",
     "text-encoder-lite": "^1.0.0",
     "tiny-emitter": "^1.0.2"
   },
@@ -89,7 +95,7 @@
   },
   "jspm": {
     "registry": "github",
-    "main": "anvil-connect",
+    "main": "src/anvil-connect",
     "format": "es6",
     "directories": {
       "lib": "src"
