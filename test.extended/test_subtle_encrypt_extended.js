@@ -3,6 +3,7 @@
 import * as se from '../src/subtle-crypto-utils'
 import {ab2base64urlstr, ascii2ab} from '../src/ab-utils'
 import {encodeJWSSegment} from '../test/tlib'
+import * as testData from '../test/test-data'
 import bows from 'bows'
 
 const log = bows('Anvil Test')
@@ -15,20 +16,7 @@ describe('Check jwk sign verification', () => {
     // https://github.com/vibornoff/webcrypto-shim master from 1/10/2016
     // all other tests pass however.
     let result = {}
-    let token = {
-      header: {
-        "alg": "RS256"
-      },
-      payload: {
-        "jti": "4535099f6570b90ce19f",
-        "iss": "http://localhost:3000",
-        "sub": "4076f412-374f-4bc6-909a-1d8eb1aa233c",
-        "aud": "58148b70-85aa-4726-af7d-42bd109dcc49",
-        "exp": 1413944758335,
-        "iat": 1413941158335,
-        "scope": "openid profile"
-      }
-    }
+    let token = testData.jwt_token
     let encodedToken = {
       header: encodeJWSSegment(token.header),
       payload: encodeJWSSegment(token.payload)

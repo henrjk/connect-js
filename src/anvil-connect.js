@@ -418,6 +418,46 @@ function userInfo () {
 
 Anvil.promise.userInfo = userInfo
 
+// this is just a sketch
+function validateClaims (claims) {
+  if (!claims) {
+    return claims
+  }
+  const now = new Date() / 1000
+  const {iat, exp, iss, aud} = claims
+  if (!exp) {
+    throw new Error('token must have exp')
+  }
+  if (!iat) {
+    throw new Error('token must have iat')
+  }
+  if (!iss) {
+    throw new Error('token must have iss')
+  }
+  if (!aud) {
+    throw new Error('token must have aud')
+  }
+  if (typeof exp !== 'number') {
+    throw new Error('token must have exp of type number')
+  }
+  if (typeof iat !== 'number') {
+    throw new Error('token must have iat of type number')
+  }
+  if (now > exp) {
+    throw new Error('token is expired.')
+  }
+  if (iat > now) {
+    throw new Error('token invalid: issued at is in the future.')
+  }
+  if (iss !== Anvil.issuer) {
+    throw new Error(`token iss '${iss}' does not match '${Anvil.issuer}'`)
+  }
+  if (aud !== Anvil.params.client_id) {
+    throw new Error(`token aud '${aud}' does not match '${Anvil.params.client_id}'`)
+  }
+  return claims
+}
+
 /**
  * Callback
  */
@@ -452,8 +492,11 @@ function callback (response) {
         log.debug('callback(): validateAndParseToken access token:', response.access_token)
         return jwtvalidator.validateAndParseToken(jwks.jwk, response.access_token)
       })
+      .then(claims => {
+        return validateClaims(claims)
+      })
       .catch(e => {
-        log.debug('Exception validating access token', e)
+        log.debug('Exception validating access token', e.toString())
         throw new Error('Failed to verify or parse access token')
       })
       .then(claims => {
@@ -465,8 +508,11 @@ function callback (response) {
         log.debug('callback(): validateAndParseToken id token:', response.id_token)
         return jwtvalidator.validateAndParseToken(jwks.jwk, response.id_token)
       })
+      .then(claims => {
+        return validateClaims(claims)
+      })
       .catch(e => {
-        log.debug('Exception validating id token', e)
+        log.debug('Exception validating id token', e.toString())
         throw new Error('Failed to verify or parse id token')
       })
       .then(claims => {

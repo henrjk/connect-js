@@ -21,6 +21,7 @@ System.config({
     "base64-js": "npm:base64-js@0.0.8",
     "bows": "npm:bows@1.4.8",
     "core-js": "npm:core-js@1.2.6",
+    "mockdate": "npm:mockdate@1.0.3",
     "q": "npm:q@1.4.1",
     "text-encoder-lite": "npm:text-encoder-lite@1.0.0",
     "tiny-emitter": "npm:tiny-emitter@1.0.1",

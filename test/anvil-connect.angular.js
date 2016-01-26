@@ -1,8 +1,10 @@
 /* eslint-env jasmine */
-/* global localStorage */
+/* global localStorage, Date */
 import 'webcrypto-shim'
 import {module, inject} from 'angular-mocks'
+import MockDate from 'mockdate'
 import '../src/anvil-connect-angular'
+import * as testData from './test-data'
 
 import * as jwsValidatorDecodeonly from '../src/jws-validator-decodeonly'
 
@@ -10,18 +12,12 @@ describe('Anvil Connect', function () {
   var {Anvil, AnvilProvider, uri, $httpBackend, promise} = {}
 
   var config =
-    {issuer: 'https://accounts.anvil.io',
-    client_id: 'uuid',
+    {issuer: testData.jwt_token.payload.iss,
+    client_id: testData.jwt_token.payload.aud,
     redirect_uri: 'https://my.app.com',
     scope: ['other'],
     display: 'popup',
-    jwk: {
-      'kty': 'RSA',
-      'use': 'sig',
-      'alg': 'RS256',
-      'n': 'nhubIr98ugQw-6JHq4c5aWGMlFAU-6dXFYewby7A-d4mY_EIY9tujJWUIa0PXGx8e3KAi7vOF81tvUCIdbmlzduLWTy50zcIdBRO6d65020yQg4Mab-lNXedDVMfW2v15uq5PfrQNMSGSaO__ktnCyc4DQcB__cYb1-7yCXnmaGkqfKFamRusevK6HxzHyFTMvCLlGvmADUiuFA_1IVfbLryy5JLTCnsehBMiJ7oRfL8bY4mLuSolLRSORcrtk-p_no4YGb5OVgGbDJd1ZndsGCWeU-MFvrt7FIyJeaL7J54Vrna1YtmU6o1_oJZvZes1_o9YLG3Q1ntXcc86uM6Yw',
-      'e': 'AQAB'
-    }
+    jwk: testData.jwk
     }
 
   beforeEach(module('anvil'))
@@ -36,7 +32,6 @@ describe('Anvil Connect', function () {
     $httpBackend = $injector.get('$httpBackend')
     Anvil = $injector.get('Anvil')
   }))
-
   describe('configure provider', function () {
     it('should set the issuer', function () {
       expect(AnvilProvider.issuer).toBe(config.issuer)
@@ -406,8 +401,10 @@ describe('Anvil Connect', function () {
 
   describe('callback with authorization response', function () {
     let result = {}
+
     // pretty bad hack but it works.
     // the flush must happen after the request
+
     function flushHttpBackend () {
       try {
         $httpBackend.flush()
@@ -420,7 +417,11 @@ describe('Anvil Connect', function () {
       uri = config.issuer + '/userinfo'
       $httpBackend.when('GET', uri).respond({})
 
-      promise = Anvil.promise.callback({ access_token: 'eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ' })
+      MockDate.set((testData.jwt_token.payload.iat + 1000) * 1000)
+      // exp = iat + 3600
+      // jasmine.clock().mockDate(baseTime) from jasmine 2.2
+
+      promise = Anvil.promise.callback({access_token: testData.jwt_token_encoded})
       setTimeout(flushHttpBackend, 0)
       promise.then(s => {
         result.session = s
@@ -431,12 +432,16 @@ describe('Anvil Connect', function () {
       })
     })
 
+    afterEach(() => {
+      MockDate.reset()
+    })
+
     it('should return a promise', function () {
       expect(promise.then).toBeDefined()
     })
 
     it('should set session property on the service', function () {
-      expect(Anvil.session.access_token).toBe('eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.QuBrm0kb0NeVigV1vm_p6-xnGj0J0F_26PHUILtMhsa5-K2-W-0JtQ7o0xcoa7WKlBX66mkGDBKJSpA3kLi4lYEkSUUOo5utxwtrAaIS7wYlq--ECHhdpfHoYgdx4W06YBfmSekbQiVmtnBMOWJt2J6gmTphhwiE5ytL4fggU79LTg30mb-X9FJ_nRnFh_9EmnOLOpej8Jxw4gAQN6FEfcQGRomQ-rplP4cAs1i8Pt-3qYEmQSrjL_w8LqT69-MErhbCVknq7BgQqGcbJgYKOoQuRxWudkSWQljOaVmSdbjLeYwLilIlwkgWcsIuFuSSPtaCNmNhdn13ink4S5UuOQ')
+      expect(Anvil.session.access_token).toBe(testData.jwt_token_encoded)
     })
   })
 
@@ -453,12 +458,13 @@ describe('Anvil Connect', function () {
     }
 
     beforeEach(function (done) {
+      MockDate.set((testData.jwt_token.payload.iat + 1000) * 1000)
       uri = config.issuer + '/userinfo'
       $httpBackend.when('GET', uri).respond({})
       Anvil.setNoWebCryptoFallbacks({
         jwtvalidatorOptions: {fallback: jwsValidatorDecodeonly, forceFallback: true}})
 
-      promise = Anvil.promise.callback({ access_token: 'eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.eyJhbGciOiJSUzI1NiJ9' })
+      promise = Anvil.promise.callback({ access_token: testData.jwt_token_encoded_bad_signature })
       setTimeout(flushHttpBackend, 0)
       promise.then(s => {
         result.session = s
@@ -470,6 +476,7 @@ describe('Anvil Connect', function () {
     })
 
     afterEach(function () {
+      MockDate.reset()
       Anvil.setNoWebCryptoFallbacks({
         jwtvalidatorOptions: {}})
     })
@@ -479,11 +486,7 @@ describe('Anvil Connect', function () {
     })
 
     it('should set session property on the service', function () {
-      expect(Anvil.session.access_token).toBe('eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.eyJhbGciOiJSUzI1NiJ9')
-    })
-
-    it('should set session property on the service', function () {
-      expect(Anvil.session.access_token).toBe('eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0NTM1MDk5ZjY1NzBiOTBjZTE5ZiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInN1YiI6IjQwNzZmNDEyLTM3NGYtNGJjNi05MDlhLTFkOGViMWFhMjMzYyIsImF1ZCI6IjU4MTQ4YjcwLTg1YWEtNDcyNi1hZjdkLTQyYmQxMDlkY2M0OSIsImV4cCI6MTQxMzk0NDc1ODMzNSwiaWF0IjoxNDEzOTQxMTU4MzM1LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIn0.eyJhbGciOiJSUzI1NiJ9')
+      expect(Anvil.session.access_token).toBe(testData.jwt_token_encoded_bad_signature)
     })
   })
 
