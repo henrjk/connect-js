@@ -10,6 +10,8 @@
 
 * [diafygi/webcrypto-examples](https://github.com/diafygi/webcrypto-examples/)
 
+* [jedie/WebCrypto-compatibility: "Web Cryptography API" compatibility informations](https://github.com/jedie/WebCrypto-compatibility)
+
 * [W3C Web Cryptography Wiki](https://www.w3.org/2012/webcrypto/wiki/Main_Page)
 
 * IE 11 and Edge: [Developer Resources : Microsoft Edge Dev](https://dev.windows.com/en-us/microsoft-edge/platform/status/webcryptoapi)
@@ -40,7 +42,10 @@ see also [WebIDL Level 1](https://www.w3.org/TR/WebIDL-1/)
 * [content/child/webcrypto/jwk.cc - chromium/src - Git at Google](https://chromium.googlesource.com/chromium/src/+/063854ec9dca4c3a460812c3eddf54eb7f9588dd/content/child/webcrypto/jwk.cc)
 * [webcrypto/ - Code Search](https://code.google.com/p/chromium/codesearch#chromium/src/components/webcrypto/&sq=package:chromium&type=cs)
 
+### Other libraries:
 
+* [cisco/node-jose](https://github.com/cisco/node-jose#keys-and-key-stores)
+* [ietf-jose/cookbook](https://github.com/ietf-jose/cookbook)
 
 ## JavaScript and UTF-8
 
@@ -71,7 +76,7 @@ bytes of the UTF-8 representation of JSON string:
 
 See also [Online Base64URL decoder](http://kjur.github.io/jsjws/tool_b64udec.html)
 
-### Anvil.sha256url(str)
+### Anvil.promise.sha256url(str)
 
 Here the encoding is done as follows:
 
