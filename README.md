@@ -3,13 +3,23 @@
 
 ## Install
 
+once this would be published on npm:
 ```bash
-$ bower install anvil-connect --save
+$ npm install anvil-connect-js
+$ npm install
+$ jspm install
+```
+
+Verify that tests pass:
+```bash
+$ npm run test
 ```
 
 ### API Documentation
 
-#### Anvil.configure(options)
+#### Initialization and provider configuration
+
+##### Anvil.configure(options)
 <!--
 lorem ipsum dolor amit
 
@@ -26,54 +36,151 @@ lorem ipsum dolor amit
 ```
 -->
 
-#### Anvil.init()
+##### Anvil.init(providerOptions, apis)
 since 0.2.0
+
+providerOptions same as for Anvil.configure().
+
+Examples:
+
+* src/anvil-connect-angular.js
+* src/anvil-connect-plain.js
+
 #### Anvil.promise.prepareAuthorization
 since 0.2.0
-#### Anvil.once
+
+Does initializations which may require network calls.
+Returns a promise.
+
+#### Main API methods
+
+##### Anvil.session
+
+Current session object.
+
+##### Emits 'authenticated' event
+since 0.2.0
+This uses TinyEmitter so that on can use the corresponding
+method on the Anvil instance.
+
+Example:
+```JavaScript
+    Anvil.once('authenticated', function (session) {
+      // do something like this:
+      log('authenticated', session)
+      })
+```
+
+##### Anvil.isAuthenticated()
+
+This method returns truthy if the user's id token has been established in
+the session.
+
+
+##### Anvil.toFormUrlEncoded(obj)
+##### Anvil.parseFormUrlEncoded(str)
+##### Anvil.getUrlFragment(url)
+##### Anvil.promise.deserialize()
 since 0.2.0
 
-#### Anvil.toFormUrlEncoded(obj)
-#### Anvil.parseFormUrlEncoded(str)
-#### Anvil.getUrlFragment(url)
-#### Anvil.popup(popupWidth, popupHeight)
-#### Anvil.session
-#### Anvil.promise.serialize()
-since 0.2.0 this is a promise
-#### Anvil.promise.deserialize()
-since 0.2.0 this is a promise
-#### Anvil.reset()
-#### Anvil.promise.uri()
-since 0.2.0 this is a promise
-#### Anvil.promise.nonce()
-since 0.2.0 this is a promise
-#### Anvil.promise.sha256url()
-since 0.2.0 this is a promise
-#### Anvil.headers()
-#### Anvil.promise.request()
-since 0.2.0: was promise before but now is no longer available under Anvil.request()
-#### Anvil.promise.userInfo()
-since 0.2.0: was promise before but now is no longer available under Anvil.request()
-#### Anvil.promise.callback(response)
-since 0.2.0: was promise before but now is no longer available under Anvil.request()
-#### Anvil.promise.authorize()
-since 0.2.0: was promise before but now is no longer available under Anvil.request()
-#### Anvil.signout(path)
-#### Anvil.destination(path)
-#### Anvil.checkSession(id)
-#### Anvil.updateSession(event)
-#### Anvil.isAuthenticated()
+Establishes session based on localStorage and/or cookies.
 
+Returns a promise
+
+##### Anvil.promise.authorize()
+since 0.2.0: was promise before but is no longer available under Anvil.authorize()
+
+##### Anvil.promise.callback(response)
+since 0.2.0: was promise before but is no longer available under Anvil.callback()
+
+##### Anvil.promise.uri()
+since 0.2.0
+
+Can be used to connect the connect server.
+
+Returns a promise
+
+Example:
+```JavaScript
+    Anvil.promise.uri('authorize', {
+      prompt: 'none',
+      id_token_hint: Anvil.session.id_token}).then( function (uri) {
+        window.location = uri
+      })
+```
+
+##### Anvil.signout(path)
+
+Signs out with the connect server.
+
+This redirects the current page to the signout endpoint.
+The server is expected to redirect the browser to the path.
+The (destination) path is stored in localStorage and can be retrieved with
+`Anvil.destination()`.
+The functions also calls Anvil#reset
+
+Example:
+```JavaScript
+Anvil.signout('/')
+```
+##### Anvil.reset()
+
+Clears browser session state in localStorage, cookies and Anvil object.
+
+##### Anvil.destination(path)
+
+Gets/set/deletes Anvil destination path in localStorage.
+
+Examples:
+```JavaScript
+// Set the destination
+Anvil.destination('/')
+
+// Get the destination
+Anvil.destination()
+
+// Clear the destination
+Anvil.destination(false)
+```
+
+### Support for session protocol
+##### Anvil.checkSession(id)
+##### Anvil.updateSession(event)
+
+#### Internal API.
+The internal API is published mostly to support unit testing.
+
+It may be changed at any time.
+##### Anvil.popup(popupWidth, popupHeight)
+##### Anvil.promise.serialize()
+since 0.2.0 this is a promise
+##### Anvil.promise.nonce()
+since 0.2.0 this is a promise
+##### Anvil.promise.sha256url()
+since 0.2.0 this is a promise
+##### Anvil.headers()
+##### Anvil.promise.request()
+since 0.2.0: was promise before but is no longer available under Anvil.request()
+##### Anvil.promise.userInfo()
+since 0.2.0: was promise before but is no longer available under Anvil.userInfo()
 
 ### AngularJS Usage
 
+**NOTE**: The information below applies to master and is mostly stale.
+
+It is suggested to look at https://github.com/henrjk/connect-example-angularjs/
+for the webcrypto supporting version.
+
+A main difference is that the new example uses npm and browserify. Of course
+you may adapt and use different tooling.
+
+Note that the latest sources are in ES2015 (ES6).
+
 Be sure to [register your app as a client](https://github.com/anvilresearch/connect-docs/blob/master/clients.md#registration) with your Anvil Connect provider to obtain credentials.
-
-
 
 #### Authenticate with a popup window
 
-First copy `callback.html` from this repository into your public assets, and add `anvil-connect.angular.js` to your `index.html` file.
+First copy `callback.html` from this repository into your public assets, and add `anvil-connect-angular.js` to your `index.html` file.
 
 ```html
 <script src="bower_components/angular/angular.js"></script>
