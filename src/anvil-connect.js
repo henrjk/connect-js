@@ -424,7 +424,7 @@ Anvil.promise.userInfo = userInfo
 
 function validate_jwt (type, response) {
   const response_types = Anvil.params.response_type.trim().split(' ')
-  const response_type = response_types.find(e => e === type)
+  const response_type = Array.find(response_types, e => e === type)
   if (!response_type) {
     // token of this type is not required, so carry on.
     return Promise.resolve()
