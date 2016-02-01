@@ -457,9 +457,18 @@ function userInfo () {
 
 Anvil.promise.userInfo = userInfo
 
+function find (arr, x) {
+  for (let e of arr) {
+    if (e === x) {
+      return e
+    }
+  }
+  return undefined
+}
+
 function validate_jwt (type, response) {
   const response_types = Anvil.params.response_type.trim().split(' ')
-  const response_type = Array.find(response_types, e => e === type)
+  const response_type = find(response_types, type)
   if (!response_type) {
     // token of this type is not required, so carry on.
     return Promise.resolve()
