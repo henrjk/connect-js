@@ -9,8 +9,8 @@ env:
     - secure:  "ilQYv0W6AU4udIE3ZrWBRuRllVgkJUHxHO6hzFoOYxl7MqEtStRa48eBLpG73MQE3QsXn5MPSsdGSgRaDW9vQCjrPWNPhZPXTOJiag9mHmdzZEuHNhDv2u04avbCW2Mtg5L+NitAiN+XIqgl/7G271OCG+hfqfDd7XOWoxi5xyeFOwzvRTd53nB1GL2in0vnkKIUfMNarMS+WtAZGES4pou8lJ6gQ5itJOAOAtB1renvDFx0hdl0TeDH7k4jYKZSGCmF507A+Zi9268tfWXtjT91e+DSE7W6HRvToA+WGkeDZXmM5Z6chod66OTcnROxTVWqqgM0UQ7XEZtRsqo2Wu1ARxj52hacgGKkI4MI1rYTbNO2R0bTw78y82g8spBq7Yo6TMEtDbrKLnEunUUz0bgn50/G/pK3pV0CMwqLqGazNDDl7EcZQLeN4TKL7dRcOTAVohcU+HJYFcd857ordxPqeiTZQI+1gcRqY2/ySBmJgaew+CAJAocG7MIKqxIiYnGWSe3NFxAFBgYiUBLSVAEifI57lfMN59Vosw9NY/APCnzT7b5R9W9jVFuj9OQMh6/h0QWqynql+xgYM35WfzjsPavWRunRIOmm0m9OOZnjUPwY8Vx/AJFaclQukBzcID7wR5E5YSSPhKBgglBMEO63bSdAy+T4jNjq36dpWxk="
 
 node_js:
-#  - "4.0"
-#  - "iojs"
+  - "4.0"
+  - "iojs"
   - "0.12"
 
 addons:
@@ -24,7 +24,7 @@ addons:
 
 before_install:
   # Chromium version is too ancient for WebCrypto use Chrome.
-  # http://blog.500tech.com/setting-up-travis-ci-to-run-tests-on-latest-google-chrome-version/ 
+  # http://blog.500tech.com/setting-up-travis-ci-to-run-tests-on-latest-google-chrome-version/
   - sudo apt-get update
   - sudo apt-get install -y libappindicator1 fonts-liberation
   - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
